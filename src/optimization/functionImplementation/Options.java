@@ -5,8 +5,11 @@
  */
 package optimization.functionImplementation;
 
-import cern.colt.matrix.DoubleMatrix1D;
-import cern.colt.matrix.impl.DenseDoubleMatrix1D;
+import org.ejml.data.DenseMatrix64F;
+import org.ejml.ops.CommonOps;
+import org.ejml.ops.NormOps;
+
+
 
 /**
  *
@@ -32,8 +35,8 @@ public class Options {
     private double trussRegionRadius;
     private boolean trussRegionRadiusSet;
     /* typical values */
-    private DoubleMatrix1D typicalX;
-    private DoubleMatrix1D typicalF;
+    private final DenseMatrix64F typicalX;
+    private final DenseMatrix64F typicalF;
     /* maximum iteration*/
     private int maxIterations;
     /*maximum step*/
@@ -61,12 +64,14 @@ public class Options {
         trussRegionRadiusSet = false;
         trussRegionRadius = -1.0;
         //typical values
-        typicalX = new DenseDoubleMatrix1D(n);
-        typicalF =  new DenseDoubleMatrix1D(n);
-        typicalX.assign(1.0);
-        typicalF.assign(1.0);
+        typicalX = new DenseMatrix64F(n,1);
+        typicalF =  new DenseMatrix64F(n,1);
+        CommonOps.fill(typicalX,1.0);
+        CommonOps.fill(typicalF,1.0);
         //maximum iterations
         maxIterations = 100;
+        //max step
+        maxStep=NormOps.fastNormP2(typicalX)*1000;
     }
 
     public Options(Options solverOptions) {
@@ -125,11 +130,11 @@ public class Options {
         return trussRegionRadius;
     }
 
-    public DoubleMatrix1D getTypicalX() {
+    public DenseMatrix64F getTypicalX() {
         return typicalX;
     }
 
-    public DoubleMatrix1D getTypicalF() {
+    public DenseMatrix64F getTypicalF() {
         return typicalF;
     }
 
@@ -180,30 +185,22 @@ public class Options {
         this.trussRegionRadius = trussRegionRadius;
     }
 
-    public void setTypicalX(DoubleMatrix1D typicalX) {
-        assert typicalX.size() == n;
-        this.typicalX = typicalX.copy();
-        for(int i=0;i<typicalX.size();i++){
-            this.typicalX.set(i, 1.0/this.typicalX.get(i));
-        }
+    public void setTypicalX(DenseMatrix64F typicalX) {
+        assert typicalX.getNumRows()== n;
+        assert typicalX.getNumCols()== 1;
+        this.typicalX.set(typicalX.copy());
+        maxStep=Math.max(NormOps.fastNormP2(typicalX)*1000,maxStep);
     }
 
-    public void setTypicalF(DoubleMatrix1D typicalF) {
-        assert typicalF.size() == n;
-        this.typicalF = typicalF.copy();
-        for(int i=0;i<typicalF.size();i++){
-            this.typicalF.set(i, 1.0/this.typicalF.get(i));
-        }
+    public void setTypicalF(DenseMatrix64F typicalF) {
+        assert typicalF.getNumRows()== n;
+        assert typicalF.getNumCols()== 1;
+        this.typicalF.set(typicalF.copy());
     }
 
     public void setMaxIterations(int maxIterations) {
         assert maxIterations > 0;
         this.maxIterations = maxIterations;
-    }
-
-    public void setMaxStep(DoubleMatrix1D initialGuess) {
-        maxStep = Math.max(1.0,Math.max(Math.sqrt(initialGuess.zDotProduct(initialGuess) * typicalX.zDotProduct(typicalX)),
-                    Math.sqrt(initialGuess.zDotProduct(initialGuess)))) * 1000;
     }
 
 }

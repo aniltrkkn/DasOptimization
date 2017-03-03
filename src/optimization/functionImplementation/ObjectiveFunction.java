@@ -5,8 +5,9 @@
  */
 package optimization.functionImplementation;
 
-import cern.colt.matrix.DoubleMatrix1D;
-import cern.colt.matrix.DoubleMatrix2D;
+import org.ejml.data.DenseMatrix64F;
+
+
 
 /**
  *
@@ -14,7 +15,7 @@ import cern.colt.matrix.DoubleMatrix2D;
  */
 public interface ObjectiveFunction {
     /*objective function*/
-    public DoubleMatrix1D getF(DoubleMatrix1D x);
-    public DoubleMatrix1D getD(DoubleMatrix1D x);
-    public DoubleMatrix2D getH(DoubleMatrix1D x);
+    public DenseMatrix64F getF(DenseMatrix64F x);
+    public DenseMatrix64F getD(DenseMatrix64F x);
+    public DenseMatrix64F getH(DenseMatrix64F x);
 }
