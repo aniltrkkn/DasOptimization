@@ -51,20 +51,20 @@ public class Optimization {
             }
         };
         DenseMatrix64F initialGuess = new DenseMatrix64F(n,1);
-        CommonOps.fill(initialGuess,0.0);
+        CommonOps.fill(initialGuess,2.0);
         Options options = new Options(n);
-        options.setAnalyticalHessian(false);
+        options.setAnalyticalHessian(true);
         NonlinearEquationSolver solver = new NonlinearEquationSolver(f, options);
         long startTime = System.nanoTime();
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 1e0; i++) {
             System.out.println(i);
             solver.solve(new DenseMatrix64F(initialGuess));
         }
         long endTime = System.nanoTime();
-        System.out.println((endTime - startTime) / 1e9);
         System.out.println(solver.getX());
         //System.out.println(solver.getFx());
         //System.out.println(solver.getJacobian());
+        System.out.println((endTime - startTime) / 1e9);
     }
 
 }

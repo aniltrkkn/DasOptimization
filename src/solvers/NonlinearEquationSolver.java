@@ -98,7 +98,11 @@ public class NonlinearEquationSolver implements Solver {
     @Override
     public double functionNorm(DenseMatrix64F x) {
         fx = equations.getF(x);
-        return 0.5 * NormOps.fastNormP2(fx) * NormOps.fastNormP2(solverOptions.getTypicalF());
+        double functionValue=0;
+        for(int i=0;i<fx.numRows;i++){
+            functionValue+= Math.pow(solverOptions.getTypicalF().get(i,0)*fx.get(i, 0),2);
+        }
+        return 0.5 * functionValue;
     }
 
     private double norm(DenseMatrix64F f) {

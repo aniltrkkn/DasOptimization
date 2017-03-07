@@ -54,6 +54,7 @@ public class NewtonStep {
             CommonOps.changeSign(newtonianStep);
             lowerTriangleR = new DenseMatrix64F(jacobian.numRows, jacobian.numCols);
             ((QRDecomposition) qrSolver.getDecomposition()).getR(lowerTriangleR, true);
+            ((QRDecomposition) qrSolver.getDecomposition()).getQR
             CommonOps.transpose(lowerTriangleR);
             return newtonianStep;
         } else {

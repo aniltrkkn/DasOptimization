@@ -43,7 +43,7 @@ public class LineSearch{
         //norm of sn*Sx
         DenseMatrix64F dummySn = new DenseMatrix64F(sn);
         CommonOps.elementMult(dummySn, solverOptions.getTypicalX());
-        double newtonLength = NormOps.conditionP2(dummySn);
+        double newtonLength = NormOps.normP2(dummySn);
         if (newtonLength > solverOptions.getMaxStep()) {
             //newton step xp=x+sn is longer than maximum allowed
             for (int i = 0; i < sn.numRows; i++) {

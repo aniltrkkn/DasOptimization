@@ -55,7 +55,7 @@ public class TrussRegionDoubleDogleg {
         fPrev = solver.functionNorm(x);
         DenseMatrix64F dummySn = new DenseMatrix64F(sn);
         CommonOps.elementMult(dummySn, solverOptions.getTypicalX());
-        double newtonLength = NormOps.conditionP2(dummySn);
+        double newtonLength = NormOps.normP2(dummySn);
 
         while (solverStatus >= STATUS_REDUCE_DELTA) {
             boolean newtonTaken = dogStep(newtonLength, g, sn, lowerTriangleR, solverOptions);
@@ -82,12 +82,12 @@ public class TrussRegionDoubleDogleg {
                 //alpha=||Dx^-1 g||^2
                 DenseMatrix64F dummyG = new DenseMatrix64F(g);
                 CommonOps.elementDiv(dummyG, solverOptions.getTypicalX());
-                double alpha = Math.pow(NormOps.conditionP2(dummyG), 2);
+                double alpha = Math.pow(NormOps.normP2(dummyG), 2);
                 //implement b = || L^tDx^-2g||^2
                 double beta = 0.0;
                 for (int i = 0; i < g.numRows; i++) {
                     double temp = 0.0;
-                    for (int j = i; j < g.numRows; j++) {
+                    for (int j  = i; j < g.numRows; j++) {
                         temp += lowerTriangleR.get(j, i) * g.get(j, 0) / (solverOptions.getTypicalX().get(j, 0) * solverOptions.getTypicalX().get(j, 0));
                     }
                     beta += temp * temp;
@@ -142,7 +142,7 @@ public class TrussRegionDoubleDogleg {
         //stepLength=||DxS||
         DenseMatrix64F dummyS = new DenseMatrix64F(s);
         CommonOps.elementDiv(dummyS, solverOptions.getTypicalX());
-        double stepLength = NormOps.conditionP2(s);
+        double stepLength = NormOps.normP2(s);
         //xPlus=x+s
         CommonOps.add(x, s, xPlus);
         //deltaF=F(xPlus)-F(x)
@@ -190,7 +190,7 @@ public class TrussRegionDoubleDogleg {
                 }
                 deltaFPred += (temp * temp / 2);
             }
-            if (solverStatus != STATUS_REDUCE_DELTA && (Math.abs(deltaFPred - deltaF) <= Math.abs(deltaF) * 0.1 || deltaF <= initSlope) && newtonTaken == false && delta <= 0.99 * solverOptions.getMaxStep()) {
+            if (solverStatus != STATUS_REDUCE_DELTA && (Math.abs(deltaFPred - deltaF) <= Math.abs(deltaF) * 0.1 ||  Math.abs(deltaF) <= Math.abs(initSlope)) && newtonTaken == false && delta <= 0.99 * solverOptions.getMaxStep()) {
                 //double delta and continue
                 solverStatus = STATUS_DOUBLE_DELTA;
                 xPrev = xPlus.copy();
