@@ -21,7 +21,7 @@ public class Optimization {
      */
     public static void main(String[] args) {
         //
-        final int n=500;
+        final int n=2;
         ObjectiveFunction f = new ObjectiveFunction() {
             @Override
             public DenseMatrix64F getF(DenseMatrix64F x) {
@@ -53,10 +53,10 @@ public class Optimization {
         DenseMatrix64F initialGuess = new DenseMatrix64F(n,1);
         CommonOps.fill(initialGuess,0.0);
         Options options = new Options(n);
-        options.setAnalyticalHessian(true);
+        options.setAnalyticalHessian(false);
         NonlinearEquationSolver solver = new NonlinearEquationSolver(f, options);
         long startTime = System.nanoTime();
-        for (int i = 0; i < 1e1; i++) {
+        for (int i = 0; i < 1; i++) {
             System.out.println(i);
             solver.solve(new DenseMatrix64F(initialGuess));
         }

@@ -25,6 +25,7 @@ public class Options {
     /* analytical or finite difference gradients */
     private boolean analyticalGradient;
     private boolean analyticalHessian;
+    private boolean BFGSHessian;
     /* machine epsilon */
     private double machineEpsilon;
     /* tolerances */
@@ -110,6 +111,10 @@ public class Options {
         return analyticalHessian;
     }
 
+    public boolean isBFGSHessian() {
+        return BFGSHessian;
+    }
+
     public double getGradientTolerance() {
         return gradientTolerance;
     }
@@ -162,8 +167,14 @@ public class Options {
 
     public void setAnalyticalHessian(boolean analyticalHessian) {
         this.analyticalHessian = analyticalHessian;
+        this.BFGSHessian=!analyticalHessian;
     }
 
+    public void setBFGSHessian(boolean BFGSHessian) {
+        this.BFGSHessian = BFGSHessian;
+        this.analyticalHessian=!BFGSHessian;
+    }
+    
     public void setGradientTolerance(double gradientTolerance) {
         this.gradientTolerance = gradientTolerance;
     }
