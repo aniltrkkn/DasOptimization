@@ -119,7 +119,7 @@ public class NonlinearEquationSolver implements Solver {
             lastStepMagnitude = Math.max(lastStepMagnitude, Math.abs(xPlus.get(i) - x.get(i)) / Math.max(Math.abs(xPlus.get(i)), 1 / solverOptions.getTypicalX().get(i)));
         }
         double localMinimum = Double.MIN_VALUE;
-        double functionNorm = norm(fx);
+        double functionNorm = this.functionNorm(fx);
         for (int i = 0; i < g.numRows; i++) {
             localMinimum = Math.max(localMinimum, Math.abs(g.get(i)) * Math.max(Math.abs(xPlus.get(i)), 1 / solverOptions.getTypicalX().get(i)) / (Math.max(functionNorm, solverOptions.getN() / 2)));
         }
@@ -202,6 +202,7 @@ public class NonlinearEquationSolver implements Solver {
             //update x
             x = xPlus;
             System.out.println(iteration);
+            System.out.println(this.functionNorm(xPlus));
         }
         //System.out.println(x);
         //System.out.println(terminationStatus);
