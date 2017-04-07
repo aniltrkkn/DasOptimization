@@ -18,10 +18,10 @@ public class Optimization {
      */
     public static void main(String[] args) {
         //
-       // NonlinearTest.testExtendedRosenbrockFunction(500,Options.DOGLEG_TRUST_REGION,100);
-       // NonlinearTest.testPowellSingularFunction(400, Options.LINE_SEARCH, 1);
-      // NonlinearTest.testPowellSingularFunction(10, Options.DOGLEG_TRUST_REGION, 1);
-      NonlinearTest.testHelicalValleyFunction(3, Options.LINE_SEARCH, 10);
+        NonlinearTest.testExtendedRosenbrockFunction(500,Options.LINE_SEARCH,1);
+        //NonlinearTest.testPowellSingularFunction(8, Options.testTrigonometricFunction, 1);
+     // NonlinearTest.testTrigonometricFunction(2, Options.LINE_SEARCH, 1);
+     //NonlinearTest.testHelicalValleyFunction(3, Options.LINE_SEARCH, 10);
     }
 
 }

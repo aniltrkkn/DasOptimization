@@ -1,4 +1,4 @@
-/*
+ /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -53,12 +53,12 @@ public class NonlinearTest {
             initialGuess.set(2 * i + 1, 1.0 * initialGuessMultiplier);
         }
         Options options = new Options(n);
-        options.setAnalyticalHessian(true);
-        System.out.println("Algoritm: Line Search");
+        options.setAnalyticalHessian(false);
+        options.setBFGSHessian(true);
         options.setAlgorithm(solver);
         NonlinearEquationSolver nonlinearSolver = new NonlinearEquationSolver(f, options);
         long startTime = System.nanoTime();
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 1000; i++) {
             nonlinearSolver.solve(new DenseMatrix64F(initialGuess));
         }
         long endTime = System.nanoTime();
@@ -109,7 +109,7 @@ public class NonlinearTest {
             initialGuess.set(4 * i + 3, 1.0 * initialGuessMultiplier);
         }
         Options options = new Options(n);
-        options.setAnalyticalHessian(false);
+        options.setAnalyticalHessian(true);
         System.out.println("Algoritm: Line Search");
         options.setAlgorithm(solver);
         NonlinearEquationSolver nonlinearSolver = new NonlinearEquationSolver(f, options);
@@ -157,7 +157,7 @@ public class NonlinearTest {
             initialGuess.set( i, 1/n * initialGuessMultiplier);
         }
         Options options = new Options(n);
-        options.setAnalyticalHessian(false);
+        options.setAnalyticalHessian(true);
         System.out.println("Algoritm: Line Search");
         options.setAlgorithm(solver);
         NonlinearEquationSolver nonlinearSolver = new NonlinearEquationSolver(f, options);
@@ -208,6 +208,7 @@ public class NonlinearTest {
         initialGuess.set( 2,0, 0.0 * initialGuessMultiplier);
         Options options = new Options(n);
         options.setAnalyticalHessian(false);
+        options.setBFGSHessian(true);
         System.out.println("Algoritm: Line Search");
         options.setAlgorithm(solver);
         NonlinearEquationSolver nonlinearSolver = new NonlinearEquationSolver(f, options);

@@ -106,7 +106,7 @@ public class LineSearch{
                         lambdaTemp = -initialSlope / (2 * multiplication.get(1));
                     } else {
                         //legitimate cubic
-                        lambdaTemp = (-multiplication.get(1) + Math.sqrt(disc)) / (3 * multiplication.get(0));
+                        lambdaTemp = (-multiplication.get(1) + Math.sqrt(Math.abs(disc))) / (3 * multiplication.get(0));
                     }
                     if (lambdaTemp > 0.5 * lambda) {
                         lambdaTemp = 0.5 * lambda;

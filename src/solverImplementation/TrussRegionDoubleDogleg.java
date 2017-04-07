@@ -43,6 +43,10 @@ public class TrussRegionDoubleDogleg {
         return maxStepTaken;
     }
 
+    public static void setDelta(double delta) {
+        TrussRegionDoubleDogleg.delta = delta;
+    }
+
     public static DenseMatrix64F dogDriver(DenseMatrix64F g, DenseMatrix64F sn, DenseMatrix64F x, DenseMatrix64F lowerTriangleR, Options solverOptions, Solver solver) {
         //find x on the double dogleg curve
         //f(x)<= f(x)+alpha*gt*(x+-xc)
@@ -190,7 +194,7 @@ public class TrussRegionDoubleDogleg {
                 }
                 deltaFPred += (temp * temp / 2);
             }
-            if (solverStatus != STATUS_REDUCE_DELTA && (Math.abs(deltaFPred - deltaF) <= Math.abs(deltaF) * 0.1 ||  Math.abs(deltaF) <= Math.abs(initSlope)) && newtonTaken == false && delta <= 0.99 * solverOptions.getMaxStep()) {
+            if (solverStatus != STATUS_REDUCE_DELTA && (Math.abs(deltaFPred - deltaF) <= Math.abs(deltaF) * 0.1 ||  (deltaF) <= (initSlope)) && newtonTaken == false && delta <= 0.99 * solverOptions.getMaxStep()) {
                 //double delta and continue
                 solverStatus = STATUS_DOUBLE_DELTA;
                 xPrev = xPlus.copy();

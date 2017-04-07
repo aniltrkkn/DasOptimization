@@ -7,11 +7,10 @@ package solvers;
 
 import optimization.functionImplementation.ObjectiveFunction;
 import optimization.functionImplementation.Options;
-import org.ejml.alg.dense.linsol.chol.LinearSolverChol_B64;
-import org.ejml.alg.dense.linsol.qr.LinearSolverQrHouseTran_D64;
 import org.ejml.data.DenseMatrix64F;
 import org.ejml.ops.CommonOps;
 import org.ejml.ops.NormOps;
+import solverImplementation.BFGS;
 import solverImplementation.LineSearch;
 import solverImplementation.NewtonStep;
 import solverImplementation.TrussRegionDoubleDogleg;
@@ -43,7 +42,7 @@ public class NonlinearEquationSolver implements Solver {
 
     public NonlinearEquationSolver(ObjectiveFunction equations, Options solverOptions) {
         //deep copy the options
-        this.solverOptions = new Options(solverOptions);
+        this.solverOptions = solverOptions;
         this.equations = equations;
         consecmax = 0;
     }
@@ -55,7 +54,7 @@ public class NonlinearEquationSolver implements Solver {
         } else {
             //finite difference Jacobian
             DenseMatrix64F finiteDifferenceJacobian = new DenseMatrix64F(solverOptions.getN(), solverOptions.getN());
-            DenseMatrix64F fx = equations.getF(x);
+            DenseMatrix64F fxx = equations.getF(x);
             DenseMatrix64F dummyFx;
             double sqrDelta = Math.sqrt(solverOptions.getMachineEpsilon());
             for (int j = 0; j < solverOptions.getN(); j++) {
@@ -76,7 +75,7 @@ public class NonlinearEquationSolver implements Solver {
                 //get the value at x+stepsize
                 dummyFx = equations.getF(x);
                 for (int i = 0; i < solverOptions.getN(); i++) {
-                    finiteDifferenceJacobian.set(i, j, (dummyFx.get(i) - fx.get(i)) / stepSize);
+                    finiteDifferenceJacobian.set(i, j, (dummyFx.get(i) - fxx.get(i)) / stepSize);
                 }
                 //resetQuick the value
                 x.set(j, temp);
@@ -97,10 +96,10 @@ public class NonlinearEquationSolver implements Solver {
 
     @Override
     public double functionNorm(DenseMatrix64F x) {
-        fx = equations.getF(x);
-        double functionValue=0;
-        for(int i=0;i<fx.numRows;i++){
-            functionValue+= Math.pow(solverOptions.getTypicalF().get(i,0)*fx.get(i, 0),2);
+        DenseMatrix64F fxDummy = equations.getF(x);
+        double functionValue = 0;
+        for (int i = 0; i < fxDummy.numRows; i++) {
+            functionValue += Math.pow(solverOptions.getTypicalF().get(i, 0) * fxDummy.get(i, 0), 2);
         }
         return 0.5 * functionValue;
     }
@@ -150,7 +149,19 @@ public class NonlinearEquationSolver implements Solver {
         if (checkInitialGuess(new DenseMatrix64F(initialGuess))) {
             //
         } else {
-
+            /* initiliaze solvers */
+            if (solverOptions.getAlgorithm() == Options.DOGLEG_TRUST_REGION) {
+                TrussRegionDoubleDogleg.setDelta(solverOptions.getTrussRegionRadius());
+            }
+            if (solverOptions.isBFGSHessian()) {
+                BFGS.h = new DenseMatrix64F(solverOptions.getN(), solverOptions.getN());
+                BFGS.l = new DenseMatrix64F(solverOptions.getN(), solverOptions.getN());
+                for (int i = 0; i < solverOptions.getN(); i++) {
+                    BFGS.l.set(i, i, 1.0);
+                    BFGS.h.set(i, i, 1.0);
+                }
+                NewtonStep.restart=true;
+            }
         }
         /*initialize iteration*/
         int iteration = 0;
@@ -175,8 +186,8 @@ public class NonlinearEquationSolver implements Solver {
                 step = NewtonStep.newtonStep(jacobian, fx, g, solverOptions);
                 lowerTriangle = NewtonStep.getLowerTriangleR();
             } else {
-                step = null;
-                lowerTriangle = null;
+                step = NewtonStep.newtonStepBFGS(jacobian, fx, g, solverOptions);
+                lowerTriangle = BFGS.l;
             }
             //get new x values
             DenseMatrix64F xPlus;
@@ -191,21 +202,42 @@ public class NonlinearEquationSolver implements Solver {
                     xPlus = LineSearch.lineSearch(g, step, x, solverOptions, this);
             }
             //new function values
-            fx = equations.getF(xPlus);
-            //get new jacobian
-            jacobian = getJacobian(xPlus);
-            //get new gradient g(x)=J^T*F(x)
-            CommonOps.multTransA(jacobian, fx, g);
-            CommonOps.elementMult(g, solverOptions.getTypicalF());
+            DenseMatrix64F fxPlus = equations.getF(xPlus);
+            DenseMatrix64F gPlus = new DenseMatrix64F(g.numRows, 1);
+            if (!solverOptions.isBFGSHessian()) {
+                //get new jacobian
+                jacobian = getJacobian(xPlus);
+                //get new gradient g(x)=J^T*F(x)
+                CommonOps.multTransA(jacobian, fx, gPlus);
+                CommonOps.elementMult(gPlus, solverOptions.getTypicalF());
+            } else {
+                //update BFGS jacobian
+                BFGS.updateJacobianNonlinear(x, xPlus, fx, fxPlus, solverOptions);
+                /* g = J*Df*FPlus */
+                for(int i=0;i<x.numRows;i++){
+                    gPlus.set(i,0,0.0);
+                    for(int j=0;j<x.numRows;j++){
+                        gPlus.set(i,0,gPlus.get(i,0)+BFGS.h.get(i, j)*fxPlus.get(j,0)*solverOptions.getTypicalF().get(j,0) );
+                    }
+                }
+                /* g = L*g */
+                for(int i=x.numRows-1;i>=0;i--){
+                    double temp=0.0;
+                    for(int j=0;j<=i;j++){
+                        temp += BFGS.l.get(j,i)*gPlus.get(j,0);
+                    }
+                    gPlus.set(i,0,temp);
+                }
+            }
             //check for convergence
-            checkConvergence(iteration, x, xPlus, fx, g, LineSearch.getSolverStatus(), LineSearch.isMaxStepTaken());
-            //update x
+            checkConvergence(iteration, x, xPlus, fx, gPlus, LineSearch.getSolverStatus(), LineSearch.isMaxStepTaken());
+            //update x and g
             x = xPlus;
-            System.out.println(iteration);
-            System.out.println(this.functionNorm(xPlus));
+            g = gPlus;
+            fx = fxPlus;
         }
         //System.out.println(x);
-        //System.out.println(terminationStatus);
+        System.out.println(terminationStatus);
     }
 
     public DenseMatrix64F getX() {

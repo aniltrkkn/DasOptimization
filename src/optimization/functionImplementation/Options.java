@@ -48,10 +48,11 @@ public class Options {
         //make sure that n is greater than 0 
         assert n > 0;
         //default algorithm is DOGLEG_TRUST_REGION
-        algorithm = Options.DOGLEG_TRUST_REGION;
+        algorithm = Options.LINE_SEARCH;
         //default gradients are calculated with finite difference
         analyticalGradient = false;
         analyticalHessian = false;
+        BFGSHessian=false;
         //calculate tolerances
         machineEpsilon = 1.0;
         while ((machineEpsilon / 2.0 + 1.0) != 1.0) {
@@ -167,7 +168,6 @@ public class Options {
 
     public void setAnalyticalHessian(boolean analyticalHessian) {
         this.analyticalHessian = analyticalHessian;
-        this.BFGSHessian=!analyticalHessian;
     }
 
     public void setBFGSHessian(boolean BFGSHessian) {
