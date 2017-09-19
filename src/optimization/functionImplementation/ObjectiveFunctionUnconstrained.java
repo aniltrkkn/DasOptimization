@@ -22,8 +22,7 @@ import org.ejml.data.DMatrixRMaj;
 
 
 /**
- *
- * @author anill
+ * User supplied input function for nonlinear equation solver
  */
 public interface ObjectiveFunctionUnconstrained {
     /*objective function*/

@@ -20,6 +20,9 @@ package optimization.functionImplementation;
 import org.ejml.data.DMatrixRMaj;
 
 
+/**
+ * User supplied input function for nonlinear equation solver
+ */
 public interface ObjectiveFunctionNonLinear {
     /*objective function*/
     public DMatrixRMaj getF(DMatrixRMaj x);

@@ -28,10 +28,6 @@ import descentAlgorithms.TrussRegionDoubleDogleg;
 import finiteDifferenceApproximations.FiniteDifference;
 import optimization.functionImplementation.ObjectiveFunctionNonLinear;
 
-/**
- *
- * @author O. Anil Turkkan <turkkan.1@osu.edu> - anilturkkan.com
- */
 public class NonlinearEquationSolver implements Solver {
 
     private final Options solverOptions;
@@ -53,6 +49,7 @@ public class NonlinearEquationSolver implements Solver {
     public static final int FAILED__TOO_MANY_MAXSTEP = 5;
     public static final int FAILED__ANOTHER_LOCAL_MINIMUM = 6;
     private int terminationStatus;
+    private String terminationString;
 
     public NonlinearEquationSolver(ObjectiveFunctionNonLinear equations, Options solverOptions) {
         //deep copy the options
@@ -126,33 +123,27 @@ public class NonlinearEquationSolver implements Solver {
         for (int i = 0; i < x.numRows; i++) {
             lastStepMagnitude = Math.max(lastStepMagnitude, Math.abs(xPlus.get(i, 0) - x.get(i, 0)) /  Math.max(Math.abs(xPlus.get(i)),1.0));
         }
-        /*
-        check if stuck in a local minimum
-         */
-        double localMinimum = Double.MIN_VALUE;
-        double functionNorm = this.functionNorm(fx);
-        for (int i = 0; i < g.numRows; i++) {
-            localMinimum = Math.max(localMinimum, Math.abs(g.get(i, 0)) * Math.abs(xPlus.get(i, 0)) / (Math.max(functionNorm, solverOptions.getN() / 2)));
-        }
 
         if (!solverStatus) {
             terminationStatus = FAILED__CANNOT_DECREASE_F;
+            terminationString= "Descent Algorthm cannot decrease F(x)";
         } else if (functionTolerance <= solverOptions.getFunctionTolerance()) {
             terminationStatus = CONVERGED__FUNCTION_TOLERANCE;
+            terminationString= "Consecutive function values less than function tolerance.";
         } else if (lastStepMagnitude <= solverOptions.getStepTolerance()) {
             terminationStatus = CONVERGED__STEP_TOLERANCE;
+            terminationString= "Last step magnotude less than function tolerance.";
         } else if (iteration >= solverOptions.getMaxIterations()) {
             terminationStatus = FAILED__ITERATION_LIMIT_REACHED;
+            terminationString= "Iteration limit reached.";
         } else if (maxStepTaken) {
             consecmax += 1;
             if (consecmax == 5) {
                 terminationStatus = FAILED__TOO_MANY_MAXSTEP;
+                terminationString= "Too many maximum magnitude steps are taken.";
             }
         } else {
             consecmax = 0;
-            /*if (localMinimum <= solverOptions.getMinTolerance()) {
-                terminationStatus = FAILED__ANOTHER_LOCAL_MINIMUM;
-            }*/
         }
     }
 
@@ -175,7 +166,7 @@ public class NonlinearEquationSolver implements Solver {
                 case Options.LINE_SEARCH:
                     descentAlgorithm = new LineSearch();
                     break;
-                case Options.DOGLEG_TRUST_REGION:
+                case Options.TRUST_REGION:
                     descentAlgorithm = new TrussRegionDoubleDogleg();
                     break;
                 default:
@@ -190,7 +181,7 @@ public class NonlinearEquationSolver implements Solver {
         //f(x)
         fx = equations.getF(x);
         //J(x)
-        jacobian = FiniteDifference.getJacobian(x, equations, solverOptions);
+        jacobian = FiniteDifference.getJacobian(x, equations, this);
         //g(x)=J^T*F(x)
         DMatrixRMaj g = new DMatrixRMaj(solverOptions.getN(), 1);
         CommonOps_DDRM.multTransA(jacobian, fx, g);
@@ -207,7 +198,7 @@ public class NonlinearEquationSolver implements Solver {
             DMatrixRMaj fxPlus = equations.getF(xPlus);
             DMatrixRMaj gPlus = new DMatrixRMaj(g.numRows, 1);
             //get new jacobian
-            jacobian = FiniteDifference.getJacobian(xPlus, equations, solverOptions);
+            jacobian = FiniteDifference.getJacobian(xPlus, equations, this);
             //get new gradient g(x)=J^T*F(x)
             CommonOps_DDRM.multTransA(jacobian, fxPlus, gPlus);
             //check for convergence
@@ -220,13 +211,11 @@ public class NonlinearEquationSolver implements Solver {
             if (this.solverOptions.isSaveIterationDetails()) {
                 this.results.update(this.functionNorm(x), g.data, x.data, this.solverOptions.getTrussRegionRadius());
             }
-            //System.out.println(iteration);
-            //System.out.println(x);
-            //System.out.println(fx);
         }
         /* update if solver is successful or not */
         if (this.solverOptions.isSaveIterationDetails()) {
             this.results.setSuccessful(this.terminationStatus < NonlinearEquationSolver.FAILED__ANOTHER_LOCAL_MINIMUM);
+            this.results.setStopReason(this.terminationString);
         }
     }
 
@@ -248,6 +237,11 @@ public class NonlinearEquationSolver implements Solver {
 
     public Results getResults() {
         return results;
+    }
+
+    @Override
+    public Options getSolverOptions() {
+        return this.solverOptions;
     }
 
 }

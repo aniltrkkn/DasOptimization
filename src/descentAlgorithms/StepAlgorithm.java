@@ -21,6 +21,10 @@ import optimization.functionImplementation.Options;
 import org.ejml.data.DMatrixRMaj;
 import solvers.Solver;
 
+/**
+ * Interface for descent algorithms
+ * 
+ */
 public interface StepAlgorithm {
     public boolean isMaxStepTaken();
     public boolean isSolverFailed();

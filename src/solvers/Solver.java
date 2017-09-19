@@ -17,9 +17,14 @@
  */
 package solvers;
 
+import optimization.functionImplementation.Options;
 import org.ejml.data.DMatrixRMaj;
 
 
+/**
+ * Interface for the solvers (Nonlinear equations solver and Unconstrained optimizer) 
+ */
 public interface Solver {
      public double functionNorm(DMatrixRMaj x);
+     public Options getSolverOptions();
 }

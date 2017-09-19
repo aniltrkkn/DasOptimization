@@ -43,11 +43,19 @@ public class TrussRegionDoubleDogleg implements StepAlgorithm {
     private int solverStatus = STATUS_FIRST_STEP;
     private boolean maxStepTaken;
 
+    /**
+     * Check if the current descent step has failed 
+     * @return true if descent algorithm has failed 
+     */
     @Override
     public boolean isSolverFailed() {
         return solverStatus != STATUS_FAILED;
     }
 
+    /**
+     * Check if magnitude of the last descent step is bigger than allowed
+     * @return true if last step magnitude is bigger than options.maxStep
+     */
     @Override
     public boolean isMaxStepTaken() {
         return maxStepTaken;
@@ -55,17 +63,15 @@ public class TrussRegionDoubleDogleg implements StepAlgorithm {
 
 
     /**
-     * Main function for trust region double dogleg solver Find an xp such that
-     * f(xp) < f(x)+alpha*g^T*(xp-x) @param g gradie
-     *
-     * nt vector
-     * @param g
-     * @param sn newton step vector
-     * @param x current x vector
-     * @param lowerTriangleR lower half of the decomposition
-     * @param solverOptions options for the solver
-     * @param solver class calling the function
-     * @return
+     * Trust region double dogleg solver Find an xp such that
+     * f(xp) < f(x)+alpha*g^T*(xp-x) 
+     * @param g gradient vector
+     * @param sn initial step vector
+     * @param x x values at the beginning of the algorithm
+     * @param lowerTriangleR lower triangle decomposition of the Hessian
+     * @param solverOptions solver options
+     * @param solver the solver that calls this descent algorithm
+     * @return new x vector
      */
     @Override
     public DMatrixRMaj solve(DMatrixRMaj g, DMatrixRMaj sn, DMatrixRMaj x, DMatrixRMaj lowerTriangleR, Options solverOptions, Solver solver) {
@@ -98,7 +104,7 @@ public class TrussRegionDoubleDogleg implements StepAlgorithm {
      * @param sn newton step vector
      * @param lowerTriangleR lower half of the decomposition
      * @param solverOptions options for the solver
-     * @return return if newton step is preferred
+     * @return return if original step is preferred
      */
     private boolean dogStep(double newtonLength, DMatrixRMaj g, DMatrixRMaj sn, DMatrixRMaj lowerTriangleR, Options solverOptions) {
         //find approximate solution to

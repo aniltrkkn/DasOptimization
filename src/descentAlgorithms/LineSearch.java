@@ -29,20 +29,37 @@ public class LineSearch implements StepAlgorithm {
     private static final int STATUS_ONGOING = 0;
     private static final int STATUS_FAILED = 1;
     private static final int STATUS_INSIDE_FUNCTION = 2;
-    private int solverStatus;
+    private int solverStatus; 
     private boolean maxStepTaken;
 
+    /**
+     * Check if the current descent step has failed 
+     * @return true if descent algorithm has failed 
+     */
     @Override
     public boolean isSolverFailed() {
         return solverStatus != STATUS_FAILED;
     }
 
+    /**
+     * Check if magnitude of the last descent step is bigger than allowed
+     * @return true if last step magnitude is bigger than options.maxStep
+     */
     @Override
     public boolean isMaxStepTaken() {
         return maxStepTaken;
     }
 
-    //xp=x+lambda*sn such that f(xp) <= f(x) + alpha*lambda*g^T*p
+    /**
+     * xp=x+lambda*sn such that f(xp) <= f(x) + alpha*lambda*g^T*p
+     * @param g gradient vector
+     * @param sn initial step vector
+     * @param x x values at the beginning of the algorithm
+     * @param lowerTriangleR lower triangle decomposition of the Hessian
+     * @param solverOptions solver options
+     * @param solver the solver that calls this descent algorithm
+     * @return new x vector
+     */
     @Override
     public DMatrixRMaj solve(DMatrixRMaj g, DMatrixRMaj sn, DMatrixRMaj x, DMatrixRMaj lowerTriangleR, Options solverOptions, Solver solver) {
         //maximum step taken

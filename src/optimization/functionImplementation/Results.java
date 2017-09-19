@@ -28,15 +28,24 @@ public class Results {
     private final List<Double> trustRadius;
     private int functionEvaluations;
     private boolean successful;
+    private String stopReason;
 
     public Results() {
         this.functionNorm = new ArrayList<>();
         this.gradient = new ArrayList<>();
         this.x = new ArrayList<>();
         this.trustRadius = new ArrayList<>();
-        this.functionEvaluations=0;
+        this.functionEvaluations = 0;
     }
 
+    /**
+     * Update the results object with new iteration values
+     *
+     * @param functionNorm function value after current iteration
+     * @param gradient gradient vector
+     * @param x x vector
+     * @param trustRadius truss radius if applicable
+     */
     public void update(double functionNorm, double[] gradient, double[] x, double trustRadius) {
         this.functionNorm.add(functionNorm);
         this.gradient.add(new ArrayList<>());
@@ -47,21 +56,21 @@ public class Results {
         for (double xx : x) {
             this.x.get(this.x.size() - 1).add(xx);
         }
-        if (trustRadius != -1.0 ){
+        if (trustRadius != -1.0) {
             this.trustRadius.add(trustRadius);
         }
     }
-    
+
     @Override
-    public String toString(){
-        if (this.successful){
-            return "Solver successful after " + String.valueOf(x.size()) + " iterations" + System.lineSeparator()+ "Function Evaluations:" + String.valueOf(this.functionEvaluations)+ System.lineSeparator();
+    public String toString() {
+        if (this.successful) {
+            return "Solver successful after " + String.valueOf(x.size()) + " iterations" + System.lineSeparator() + "Function Evaluations:" + String.valueOf(this.functionEvaluations) + System.lineSeparator() + "Stop Reason:" + this.stopReason + System.lineSeparator();
         } else {
-            return "Solver successful after " + String.valueOf(x.size()) + " iterations" + System.lineSeparator()+ "Function Evaluations:" + String.valueOf(this.functionEvaluations)+ System.lineSeparator();
+            return "Solver failed after " + String.valueOf(x.size()) + " iterations" + System.lineSeparator() + "Function Evaluations:" + String.valueOf(this.functionEvaluations) + System.lineSeparator() + "Stop Reason:" + this.stopReason + System.lineSeparator();
         }
     }
-    
-    public void updateFunctionEvaluations(){
+
+    public void updateFunctionEvaluations() {
         this.functionEvaluations++;
     }
 
@@ -88,5 +97,13 @@ public class Results {
     public void setSuccessful(boolean successful) {
         this.successful = successful;
     }
-    
+
+    public String getStopReason() {
+        return stopReason;
+    }
+
+    public void setStopReason(String stopReason) {
+        this.stopReason = stopReason;
+    }
+
 }

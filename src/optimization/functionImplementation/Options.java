@@ -23,7 +23,7 @@ public class Options {
     private final int n;
     /* algorithm options */
     public static final int LINE_SEARCH = 0;
-    public static final int DOGLEG_TRUST_REGION = 1;
+    public static final int TRUST_REGION = 1;
     private int algorithm;
     /* analytical or finite difference gradients */
     private boolean analyticalGradient;
@@ -92,6 +92,10 @@ public class Options {
         this.saveIterationDetails=solverOptions.isSaveIterationDetails();
     }
 
+    /**
+     * set all tolerances to user supplied value
+     * @param tolerance all tolerances will be set to this value
+     */
     public void setAllTolerances(double tolerance){
         gradientTolerance =tolerance;
         stepTolerance = tolerance;
@@ -157,7 +161,7 @@ public class Options {
 
     public void setAlgorithm(int algorithm) {
         assert algorithm >= LINE_SEARCH;
-        assert algorithm <= DOGLEG_TRUST_REGION;
+        assert algorithm <= TRUST_REGION;
         this.algorithm = algorithm;
     }
 
@@ -202,7 +206,7 @@ public class Options {
     }
     
     public void setTrussRegionRadius(double trussRegionRadius) {
-        trussRegionRadiusSet = true;
+        this.trussRegionRadiusSet = true;
         this.trussRegionRadius = trussRegionRadius;
     }
 

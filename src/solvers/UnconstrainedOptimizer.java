@@ -26,7 +26,6 @@ import optimization.functionImplementation.Results;
 import org.ejml.data.DMatrixRMaj;
 import optimization.functionImplementation.ObjectiveFunctionUnconstrained;
 
-
 public class UnconstrainedOptimizer implements Solver {
 
     private final Options solverOptions;
@@ -48,6 +47,7 @@ public class UnconstrainedOptimizer implements Solver {
     public static final int FAILED__TOO_MANY_MAXSTEP = 6;
     public static final int FAILED__ANOTHER_LOCAL_MINIMUM = 7;
     private int terminationStatus;
+    private String terminationString;
 
     public UnconstrainedOptimizer(ObjectiveFunctionUnconstrained equations, Options solverOptions) {
         //deep copy the options
@@ -59,81 +59,83 @@ public class UnconstrainedOptimizer implements Solver {
 
     /**
      * solve (LL^T)step= -g(x) for step
+     *
      * @param step descent step
      * @param lowerTriangle Cholesky decomposition of the Hessian
-    */
-    public void solveCholesky(DMatrixRMaj step,DMatrixRMaj lowerTriangle){
-        int n=step.numRows;
+     */
+    public void solveCholesky(DMatrixRMaj step, DMatrixRMaj lowerTriangle) {
+        int n = step.numRows;
         /* Solve Ly=step */
-        DMatrixRMaj y= new DMatrixRMaj(lowerTriangle.numCols, 1);
-        y.set(0, 0, gx.get(0)/lowerTriangle.get(0,0));
-        for(int i=1;i<n;i++){
-            y.set(i,0,gx.get(i));
-            for(int j=0;j<i;j++){
-                y.set(i,0,y.get(i,0)-lowerTriangle.get(i,j)*y.get(j,0));
+        DMatrixRMaj y = new DMatrixRMaj(lowerTriangle.numCols, 1);
+        y.set(0, 0, gx.get(0) / lowerTriangle.get(0, 0));
+        for (int i = 1; i < n; i++) {
+            y.set(i, 0, gx.get(i));
+            for (int j = 0; j < i; j++) {
+                y.set(i, 0, y.get(i, 0) - lowerTriangle.get(i, j) * y.get(j, 0));
             }
-            y.set(i,0,y.get(i,0)/lowerTriangle.get(i,i));
+            y.set(i, 0, y.get(i, 0) / lowerTriangle.get(i, i));
         }
         /* solve L^Ts = y */
-        step.set(n-1, 0, y.get(n-1)/lowerTriangle.get(n-1,n-1));
-        for(int i=n-2;i>=0;i--){
-            step.set(i,0,y.get(i));
-            for(int j=i+1;j<n;j++){
-                step.set(i,0,step.get(i,0)-lowerTriangle.get(j,i)*step.get(j,0));
+        step.set(n - 1, 0, y.get(n - 1) / lowerTriangle.get(n - 1, n - 1));
+        for (int i = n - 2; i >= 0; i--) {
+            step.set(i, 0, y.get(i));
+            for (int j = i + 1; j < n; j++) {
+                step.set(i, 0, step.get(i, 0) - lowerTriangle.get(j, i) * step.get(j, 0));
             }
-            step.set(i,0,step.get(i,0)/lowerTriangle.get(i,i));
+            step.set(i, 0, step.get(i, 0) / lowerTriangle.get(i, i));
         }
         /*inverse the step sign */
-        for(int i=0;i<n;i++){
-            step.set(i,0,-step.get(i,0));
+        for (int i = 0; i < n; i++) {
+            step.set(i, 0, -step.get(i, 0));
         }
     }
-    
+
     /**
      * Perform a Cholesky decomposition and store it in the lower triangle
+     *
      * @param lowerTriangle lower triangle Cholesky decomposition
      * @param maximumMember maximum member of the Hessian
-     * @return 
+     * @return
      */
-    private double perturbedCholeskyDecomposition(DMatrixRMaj lowerTriangle,double maximumMember) {
-        double minimumValue= Math.pow(this.solverOptions.getMachineEpsilon(),1.0/4.0)* maximumMember;
-        if(maximumMember <1e-10){
+    private double perturbedCholeskyDecomposition(DMatrixRMaj lowerTriangle, double maximumMember) {
+        double minimumValue = Math.pow(this.solverOptions.getMachineEpsilon(), 1.0 / 4.0) * maximumMember;
+        if (maximumMember < 1e-10) {
             //this means H is positive definite
-            for(int i=0;i<hx.numCols;i++){
-                maximumMember=Math.max(maximumMember, Math.abs(hx.get(i,i)));
+            for (int i = 0; i < hx.numCols; i++) {
+                maximumMember = Math.max(maximumMember, Math.abs(hx.get(i, i)));
             }
             maximumMember = Math.sqrt(maximumMember);
         }
-        double minimumValue2 = Math.sqrt(this.solverOptions.getMachineEpsilon())*maximumMember;
-        double addition=0.0; //this value contains the maximum amount that will be added to H
+        double minimumValue2 = Math.sqrt(this.solverOptions.getMachineEpsilon()) * maximumMember;
+        double addition = 0.0; //this value contains the maximum amount that will be added to H
         /* main loop to form column of lower triangle */
-        for(int j=0;j<hx.numCols;j++){
-            lowerTriangle.set(j,j,hx.get(j,j));
-            for(int i=0;i<j;i++){
-                lowerTriangle.set(j,j,lowerTriangle.get(j,j)-lowerTriangle.get(j,i)*lowerTriangle.get(j,i));
+        for (int j = 0; j < hx.numCols; j++) {
+            lowerTriangle.set(j, j, hx.get(j, j));
+            for (int i = 0; i < j; i++) {
+                lowerTriangle.set(j, j, lowerTriangle.get(j, j) - lowerTriangle.get(j, i) * lowerTriangle.get(j, i));
             }
-            double minimumJJ =0.0;
-            for(int i=j+1;i<hx.numCols;i++){
-                lowerTriangle.set(i,j,hx.get(j,i));
-                for(int k=0;k<j;k++){
-                    lowerTriangle.set(i,j,lowerTriangle.get(i,j)-lowerTriangle.get(i,k)*lowerTriangle.get(j,k));
+            double minimumJJ = 0.0;
+            for (int i = j + 1; i < hx.numCols; i++) {
+                lowerTriangle.set(i, j, hx.get(j, i));
+                for (int k = 0; k < j; k++) {
+                    lowerTriangle.set(i, j, lowerTriangle.get(i, j) - lowerTriangle.get(i, k) * lowerTriangle.get(j, k));
                 }
-                minimumJJ=Math.max(minimumJJ,Math.abs(lowerTriangle.get(i,j)));
+                minimumJJ = Math.max(minimumJJ, Math.abs(lowerTriangle.get(i, j)));
             }
-            minimumJJ = Math.max(minimumJJ/maximumMember, minimumValue);
-            if(lowerTriangle.get(j,j) > minimumJJ*minimumJJ){
+            minimumJJ = Math.max(minimumJJ / maximumMember, minimumValue);
+            if (lowerTriangle.get(j, j) > minimumJJ * minimumJJ) {
                 //normal Cholesky iteration
-                lowerTriangle.set(j,j,Math.sqrt(lowerTriangle.get(j,j)));
+                lowerTriangle.set(j, j, Math.sqrt(lowerTriangle.get(j, j)));
             } else {
                 //augment H(j,j)
-                if(minimumJJ <minimumValue2 ){
-                    minimumJJ=minimumValue2;
+                if (minimumJJ < minimumValue2) {
+                    minimumJJ = minimumValue2;
                 }
-                addition=Math.max(addition,minimumJJ*minimumJJ - lowerTriangle.get(j,j));
-                lowerTriangle.set(j,j,minimumJJ);
+                addition = Math.max(addition, minimumJJ * minimumJJ - lowerTriangle.get(j, j));
+                lowerTriangle.set(j, j, minimumJJ);
             }
-            for(int i=j+1;i<hx.numCols;i++){
-                lowerTriangle.set(i,j,lowerTriangle.get(i,j)/lowerTriangle.get(j,j));
+            for (int i = j + 1; i < hx.numCols; i++) {
+                lowerTriangle.set(i, j, lowerTriangle.get(i, j) / lowerTriangle.get(j, j));
             }
         }
         return addition;
@@ -179,7 +181,7 @@ public class UnconstrainedOptimizer implements Solver {
             hx.set(i, i, hx.get(i, i) + addition);
         }
         /* call Cholesky decomposition */
-        addition = this.perturbedCholeskyDecomposition(lowerTriangle,Math.sqrt(Math.max(maximumDiagonal, maxOffDiagonal / hx.numCols)));
+        addition = this.perturbedCholeskyDecomposition(lowerTriangle, Math.sqrt(Math.max(maximumDiagonal, maxOffDiagonal / hx.numCols)));
         /* check if it is successful */
         if (addition > 1e-7) {
             /* still not positive definite */
@@ -187,7 +189,7 @@ public class UnconstrainedOptimizer implements Solver {
             double maxValue = this.hx.get(0, 0);
             for (int i = 0; i < hx.numRows; i++) {
                 double offRow = 0.0;
-                for (int j = 0; j < i ;j++) {
+                for (int j = 0; j < i; j++) {
                     offRow += Math.abs(hx.get(j, i));
                 }
                 for (int j = i + 1; j < hx.numRows; j++) {
@@ -197,14 +199,14 @@ public class UnconstrainedOptimizer implements Solver {
                 maxValue = Math.max(maxValue, hx.get(i, i) + offRow);
             }
             double addition2 = (maxValue - minValue) * epsilon - minValue;
-            addition=Math.min(Math.max(0,addition2),addition);
+            addition = Math.min(Math.max(0, addition2), addition);
             //add the value to hessian and make it positive definite
             for (int i = 0; i < hx.numRows; i++) {
                 hx.set(i, i, hx.get(i, i) + addition);
             }
-            
+
         }
-        this.perturbedCholeskyDecomposition(lowerTriangle,0.0);
+        this.perturbedCholeskyDecomposition(lowerTriangle, 0.0);
     }
 
     /**
@@ -276,18 +278,24 @@ public class UnconstrainedOptimizer implements Solver {
 
         if (!solverStatus) {
             terminationStatus = FAILED__CANNOT_DECREASE_F;
+            terminationString = "Descent Algorthm cannot decrease F(x)";
         } else if (functionTolerance <= solverOptions.getFunctionTolerance()) {
             terminationStatus = CONVERGED__FUNCTION_TOLERANCE;
+            terminationString = "Consecutive function values less than function tolerance.";
         } else if (lastStepMagnitude <= solverOptions.getStepTolerance()) {
             terminationStatus = CONVERGED__STEP_TOLERANCE;
+            terminationString = "Last step magnotude less than function tolerance.";
         } else if (gradientMagnitude <= solverOptions.getMinTolerance()) {
             terminationStatus = CONVERGED__GRADIENT_TOLERANCE;
+            terminationString = "Last gradient vector magnitude less than gradient tolerance.";
         } else if (iteration >= this.solverOptions.getMaxIterations()) {
             terminationStatus = FAILED__ITERATION_LIMIT_REACHED;
+            terminationString = "Iteration limit reached.";
         } else if (maxStepTaken) {
             consecmax += 1;
             if (consecmax == 5) {
                 terminationStatus = FAILED__TOO_MANY_MAXSTEP;
+                terminationString = "Too many maximum magnitude steps are taken.";
             }
         } else {
             consecmax = 0;
@@ -306,7 +314,7 @@ public class UnconstrainedOptimizer implements Solver {
             case Options.LINE_SEARCH:
                 descentAlgorithm = new LineSearch();
                 break;
-            case Options.DOGLEG_TRUST_REGION:
+            case Options.TRUST_REGION:
                 descentAlgorithm = new TrussRegionDoubleDogleg();
                 break;
             default:
@@ -320,13 +328,13 @@ public class UnconstrainedOptimizer implements Solver {
         //calculate objective function
         fx = equations.getF(x);
         //calculate gradient
-        gx = FiniteDifference.getGradient(x, equations, solverOptions);
+        gx = FiniteDifference.getGradient(x, equations, this);
         //check initial guess
         if (checkInitialGuess()) {
             return;
         }
         //calculate hessian
-        hx = FiniteDifference.getHessian(x, equations, solverOptions);
+        hx = FiniteDifference.getHessian(x, equations, this);
         /*iterate until solver succeeds, fails or maximum iteration number is reached*/
         DMatrixRMaj lowerTriangle = new DMatrixRMaj(hx.numRows, hx.numRows);
         DMatrixRMaj step = new DMatrixRMaj(hx.numRows, 1);
@@ -336,18 +344,10 @@ public class UnconstrainedOptimizer implements Solver {
             /*Cholesky Decomposition*/
             this.perturbedCholeskyDecompositionDriver(lowerTriangle);
             this.solveCholesky(step, lowerTriangle);
-            /*test */
-            /*cDecomposition.setA(hx);
-            cDecomposition.solve(gx, step);
-            CommonOps_DDRM.changeSign(step);
-            ((CholeskyDecomposition) cDecomposition.getDecomposition()).getT(lowerTriangle);
-            if (!((CholeskyDecomposition) cDecomposition.getDecomposition()).isLower()) {
-                CommonOps_DDRM.transpose(lowerTriangle);
-            }*/
             /*get new x values */
             DMatrixRMaj xNew = descentAlgorithm.solve(gx, step, x, lowerTriangle, solverOptions, this);
             /*get new gradient(x)*/
-            DMatrixRMaj gxNew = FiniteDifference.getGradient(xNew, equations, solverOptions);
+            DMatrixRMaj gxNew = FiniteDifference.getGradient(xNew, equations, this);
             /* get new function magnitude */
             double fxNew = functionNorm(xNew);
             /*check convergence */
@@ -356,7 +356,7 @@ public class UnconstrainedOptimizer implements Solver {
             x = xNew;
             gx = gxNew;
             fx = fxNew;
-            hx = FiniteDifference.getHessian(x, equations, solverOptions);
+            hx = FiniteDifference.getHessian(x, equations, this);
             //update results
             if (this.solverOptions.isSaveIterationDetails()) {
                 this.results.update(this.functionNorm(x), gx.data, x.data, this.solverOptions.getTrussRegionRadius());
@@ -390,5 +390,10 @@ public class UnconstrainedOptimizer implements Solver {
 
     public Results getResults() {
         return results;
+    }
+
+    @Override
+    public Options getSolverOptions() {
+        return this.solverOptions;
     }
 }

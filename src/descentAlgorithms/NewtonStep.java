@@ -32,10 +32,22 @@ public class NewtonStep {
     private  DMatrixRMaj lowerTriangleR;
     public  boolean restart;
 
+    /**
+     * Get lower triangle decomposition of the Jacobian
+     * @return lower triangle Jacobian matrix
+     */
     public  DMatrixRMaj getLowerTriangleR() {
         return lowerTriangleR;
     }
 
+    /**
+     * Factor a model Jacobian and calculate Newton step
+     * @param jacobian Jacobian matrix
+     * @param fx function values at current x
+     * @param g current x
+     * @param solverOptions solver options
+     * @return new x vector 
+     */
     public  DMatrixRMaj newtonStep(DMatrixRMaj jacobian, DMatrixRMaj fx, DMatrixRMaj g, Options solverOptions) {
         /*Calculate QR decomposition of J*/
         DMatrixRMaj dummyJacobian = jacobian.copy();
@@ -45,10 +57,6 @@ public class NewtonStep {
         /*get the condition number*/
         double conditionNumber = qrSolver.quality();
         //get the condition number
-        //double conditionNumber = algebra.cond(rMatrix);
-        //double conditionNumber = ;
-        //if (MatrixFeatures.rank(dummyJacobian) == solverOptions.getN()&& conditionNumber > 1e3*Math.sqrt(solverOptions.getMachineEpsilon())) {
-        // if (conditionNumber > 1e3 * Math.sqrt(solverOptions.getMachineEpsilon())) {
         if (conditionNumber > 1e-12) {
             /*calculate the newton step -J*sn=fx*/
             DMatrixRMaj newtonianStep = new DMatrixRMaj(dummyJacobian.numRows, 1);
