@@ -7,7 +7,7 @@ DasOptimization(V1.0) is a lightweight, robust and scalable library capable of s
 - DasOptimization can recover from singular Hessian and Jacobian matrices.
 - DasOptimization is coded only in Java and therefore, it can be used in Android projects.
 
-For more information, please visit [user guide](http://compliantanalysis.com/dasOptimization).
+For more information, please visit the [user guide](http://compliantanalysis.com/dasOptimization).
 
 DasOptimization is created for and successfully employed in [DAS Mechanism Analysis](http://compliantanalysis.com) which is a fast kinematic analysis software for mechanisms.
 
