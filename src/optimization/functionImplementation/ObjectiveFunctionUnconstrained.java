@@ -5,7 +5,7 @@
  */
 package optimization.functionImplementation;
 
-import org.ejml.data.DenseMatrix64F;
+import org.ejml.data.DMatrixRMaj;
 
 
 
@@ -13,9 +13,9 @@ import org.ejml.data.DenseMatrix64F;
  *
  * @author anill
  */
-public interface ObjectiveFunction {
+public interface ObjectiveFunctionUnconstrained {
     /*objective function*/
-    public DenseMatrix64F getF(DenseMatrix64F x);
-    public DenseMatrix64F getD(DenseMatrix64F x);
-    public DenseMatrix64F getH(DenseMatrix64F x);
+    public double getF(DMatrixRMaj x);
+    public DMatrixRMaj getG(DMatrixRMaj x);
+    public DMatrixRMaj getH(DMatrixRMaj x);
 }

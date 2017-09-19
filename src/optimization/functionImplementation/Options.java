@@ -5,11 +5,6 @@
  */
 package optimization.functionImplementation;
 
-import org.ejml.data.DenseMatrix64F;
-import org.ejml.ops.CommonOps;
-import org.ejml.ops.NormOps;
-
-
 
 /**
  *
@@ -24,8 +19,9 @@ public class Options {
     private int algorithm;
     /* analytical or finite difference gradients */
     private boolean analyticalGradient;
+    private boolean centralDifferenceGradient;
+    private boolean analyticalJacobian;
     private boolean analyticalHessian;
-    private boolean BFGSHessian;
     /* machine epsilon */
     private double machineEpsilon;
     /* tolerances */
@@ -35,13 +31,12 @@ public class Options {
     private double minTolerance;
     private double trussRegionRadius;
     private boolean trussRegionRadiusSet;
-    /* typical values */
-    private final DenseMatrix64F typicalX;
-    private final DenseMatrix64F typicalF;
     /* maximum iteration*/
     private int maxIterations;
     /*maximum step*/
     private double maxStep;
+    /*save iteration details*/
+    private boolean saveIterationDetails;
 
     public Options(int n) {
         this.n = n;
@@ -51,29 +46,27 @@ public class Options {
         algorithm = Options.LINE_SEARCH;
         //default gradients are calculated with finite difference
         analyticalGradient = false;
+        centralDifferenceGradient = false;
         analyticalHessian = false;
-        BFGSHessian=false;
+        analyticalJacobian = false;
         //calculate tolerances
         machineEpsilon = 1.0;
         while ((machineEpsilon / 2.0 + 1.0) != 1.0) {
             machineEpsilon /= 2.0;
         }
         machineEpsilon = machineEpsilon * 2.0;
-        gradientTolerance = Math.pow(machineEpsilon, 1.0 / 3.0);
-        stepTolerance = Math.pow(machineEpsilon, 2.0 / 3.0);
-        functionTolerance = Math.pow(machineEpsilon, 1.0 / 3.0);
-        minTolerance = Math.pow(machineEpsilon, 2.0 / 3.0);
+        gradientTolerance = 1e-8;
+        stepTolerance = 1e-8;
+        functionTolerance = 1e-8;
+        minTolerance = 1e-8;
         trussRegionRadiusSet = false;
         trussRegionRadius = -1.0;
-        //typical values
-        typicalX = new DenseMatrix64F(n,1);
-        typicalF =  new DenseMatrix64F(n,1);
-        CommonOps.fill(typicalX,1.0);
-        CommonOps.fill(typicalF,1.0);
         //maximum iterations
         maxIterations = 100;
         //max step
-        maxStep=NormOps.fastNormP2(typicalX)*1000;
+        maxStep=1000.0;
+        //details
+        this.saveIterationDetails=false;
     }
 
     public Options(Options solverOptions) {
@@ -86,12 +79,18 @@ public class Options {
         stepTolerance=solverOptions.getStepTolerance();
         trussRegionRadius = solverOptions.getTrussRegionRadius();
         trussRegionRadiusSet=solverOptions.isTrussRegionRadiusSet();
-        typicalX=solverOptions.getTypicalX().copy();
-        typicalF=solverOptions.getTypicalF().copy();
         maxIterations=solverOptions.getMaxIterations();
         maxStep=solverOptions.getMaxStep();
+        this.saveIterationDetails=solverOptions.isSaveIterationDetails();
     }
 
+    public void setAllTolerances(double tolerance){
+        gradientTolerance =tolerance;
+        stepTolerance = tolerance;
+        functionTolerance = tolerance;
+        minTolerance = tolerance;
+    }
+    
     public double getMachineEpsilon() {
         return machineEpsilon;
     }
@@ -110,10 +109,6 @@ public class Options {
 
     public boolean isAnalyticalHessian() {
         return analyticalHessian;
-    }
-
-    public boolean isBFGSHessian() {
-        return BFGSHessian;
     }
 
     public double getGradientTolerance() {
@@ -136,20 +131,16 @@ public class Options {
         return trussRegionRadius;
     }
 
-    public DenseMatrix64F getTypicalX() {
-        return typicalX;
-    }
-
-    public DenseMatrix64F getTypicalF() {
-        return typicalF;
-    }
-
     public boolean isTrussRegionRadiusSet() {
         return trussRegionRadiusSet;
     }
 
     public int getMaxIterations() {
         return maxIterations;
+    }
+
+    public void setMaxStep(double maxStep) {
+        this.maxStep = maxStep;
     }
 
     public double getMaxStep() {
@@ -166,13 +157,24 @@ public class Options {
         this.analyticalGradient = analyticalGradient;
     }
 
-    public void setAnalyticalHessian(boolean analyticalHessian) {
-        this.analyticalHessian = analyticalHessian;
+    public boolean isCentralDifferenceGradient() {
+        return centralDifferenceGradient;
     }
 
-    public void setBFGSHessian(boolean BFGSHessian) {
-        this.BFGSHessian = BFGSHessian;
-        this.analyticalHessian=!BFGSHessian;
+    public void setCentralDifferenceGradient(boolean centralDifferenceGradient) {
+        this.centralDifferenceGradient = centralDifferenceGradient;
+    }  
+
+    public boolean isAnalyticalJacobian() {
+        return analyticalJacobian;
+    }
+
+    public void setAnalyticalJacobian(boolean analyticalJacobian) {
+        this.analyticalJacobian = analyticalJacobian;
+    }
+    
+    public void setAnalyticalHessian(boolean analyticalHessian) {
+        this.analyticalHessian = analyticalHessian;
     }
     
     public void setGradientTolerance(double gradientTolerance) {
@@ -196,22 +198,16 @@ public class Options {
         this.trussRegionRadius = trussRegionRadius;
     }
 
-    public void setTypicalX(DenseMatrix64F typicalX) {
-        assert typicalX.getNumRows()== n;
-        assert typicalX.getNumCols()== 1;
-        this.typicalX.set(typicalX.copy());
-        maxStep=Math.max(NormOps.fastNormP2(typicalX)*1000,maxStep);
-    }
-
-    public void setTypicalF(DenseMatrix64F typicalF) {
-        assert typicalF.getNumRows()== n;
-        assert typicalF.getNumCols()== 1;
-        this.typicalF.set(typicalF.copy());
-    }
-
     public void setMaxIterations(int maxIterations) {
         assert maxIterations > 0;
         this.maxIterations = maxIterations;
     }
 
+    public boolean isSaveIterationDetails() {
+        return saveIterationDetails;
+    }
+
+    public void setSaveIterationDetails(boolean saveIterationDetails) {
+        this.saveIterationDetails = saveIterationDetails;
+    }
 }

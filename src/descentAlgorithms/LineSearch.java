@@ -3,37 +3,40 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package solverImplementation;
+package descentAlgorithms;
 
 import optimization.functionImplementation.Options;
-import org.ejml.data.DenseMatrix64F;
-import org.ejml.ops.CommonOps;
-import org.ejml.ops.NormOps;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.CommonOps_DDRM;
+import org.ejml.dense.row.NormOps_DDRM;
 import solvers.Solver;
 
 /**
  *
  * @author turkkan.1
  */
-public class LineSearch{
+public class LineSearch implements StepAlgorithm{
 
     //solver status
     private static final int STATUS_ONGOING = 0;
     private static final int STATUS_FAILED = 1;
     private static final int STATUS_INSIDE_FUNCTION = 2;
-    private static int solverStatus;
-    private static boolean maxStepTaken;
+    private  int solverStatus;
+    private  boolean maxStepTaken;
 
-    public static boolean getSolverStatus() {
+    @Override
+    public  boolean isSolverFailed() {
         return solverStatus != STATUS_FAILED;
     }
 
-    public static boolean isMaxStepTaken() {
+    @Override
+    public boolean isMaxStepTaken() {
         return maxStepTaken;
     }
 
     //xp=x+lambda*sn such that f(xp) <= f(x) + alpha*lambda*g^T*p
-    public static DenseMatrix64F lineSearch(DenseMatrix64F g, DenseMatrix64F sn, DenseMatrix64F x, Options solverOptions, Solver solver) {
+    @Override
+    public  DMatrixRMaj solve(DMatrixRMaj g, DMatrixRMaj sn, DMatrixRMaj x, DMatrixRMaj lowerTriangleR, Options solverOptions, Solver solver) {
         //maximum step taken
         maxStepTaken = false;
         //solver status
@@ -41,9 +44,8 @@ public class LineSearch{
         //alpha
         double alpha = 1e-4;
         //norm of sn*Sx
-        DenseMatrix64F dummySn = new DenseMatrix64F(sn);
-        CommonOps.elementMult(dummySn, solverOptions.getTypicalX());
-        double newtonLength = NormOps.normP2(dummySn);
+        DMatrixRMaj dummySn = new DMatrixRMaj(sn);
+        double newtonLength = NormOps_DDRM.normP2(dummySn);
         if (newtonLength > solverOptions.getMaxStep()) {
             //newton step xp=x+sn is longer than maximum allowed
             for (int i = 0; i < sn.numRows; i++) {
@@ -52,16 +54,16 @@ public class LineSearch{
             newtonLength = solverOptions.getMaxStep();
         }
         //initial slope
-        double initialSlope = CommonOps.dot(g, sn);
+        double initialSlope = CommonOps_DDRM.dot(g, sn);
         //relative length of sn as calculated in the stopping routine
         double relativeLength = Double.MIN_VALUE;
         for (int i = 0; i < sn.numRows; i++) {
-            relativeLength = Math.max(relativeLength, Math.abs(sn.get(i)) / Math.max(Math.abs(x.get(i)), 1 / solverOptions.getTypicalX().get(i)));
+            relativeLength = Math.max(relativeLength, Math.abs(sn.get(i)) /  Math.max(Math.abs(x.get(i)),1.0) );
         }
         //minimum allowable step length
         double minLambda = solverOptions.getStepTolerance() / relativeLength;
         /* find the new x values*/
-        DenseMatrix64F xPlus = new DenseMatrix64F(x.numRows, x.numCols);
+        DMatrixRMaj xPlus = new DMatrixRMaj(x.numRows, x.numCols);
         double lambda = 1.0;
         double initialFunctionNorm = solver.functionNorm(x);
         double lambdaPrevious = 1.0;
@@ -92,12 +94,12 @@ public class LineSearch{
                     lambdaTemp = -initialSlope / (2 * (newFunctionNorm - initialFunctionNorm - initialSlope));
                 } else {
                     // cubic fit
-                    DenseMatrix64F a = new DenseMatrix64F(new double[][]{{1 / (lambda * lambda), -1 / (lambdaPrevious * lambdaPrevious)}, {-lambdaPrevious / (lambda * lambda), lambda / (lambdaPrevious * lambdaPrevious)}});
-                    DenseMatrix64F b = new DenseMatrix64F(2, 1);
+                    DMatrixRMaj a = new DMatrixRMaj(new double[][]{{1 / (lambda * lambda), -1 / (lambdaPrevious * lambdaPrevious)}, {-lambdaPrevious / (lambda * lambda), lambda / (lambdaPrevious * lambdaPrevious)}});
+                    DMatrixRMaj b = new DMatrixRMaj(2, 1);
                     b.set(0, 0, newFunctionNorm - initialFunctionNorm - lambda * initialSlope);
                     b.set(1, 0, previousFunctionNorm - initialFunctionNorm - lambdaPrevious * initialSlope);
-                    DenseMatrix64F multiplication = new DenseMatrix64F(2, 1);
-                    CommonOps.mult(a, b, multiplication);
+                    DMatrixRMaj multiplication = new DMatrixRMaj(2, 1);
+                    CommonOps_DDRM.mult(a, b, multiplication);
                     multiplication.set(0, multiplication.get(0, 0) / (lambda - lambdaPrevious));
                     multiplication.set(1, multiplication.get(1, 0) / (lambda - lambdaPrevious));
                     double disc = multiplication.get(1) * multiplication.get(1) - 3 * multiplication.get(0) * initialSlope;

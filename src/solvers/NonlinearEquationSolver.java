@@ -5,15 +5,16 @@
  */
 package solvers;
 
-import optimization.functionImplementation.ObjectiveFunction;
 import optimization.functionImplementation.Options;
-import org.ejml.data.DenseMatrix64F;
-import org.ejml.ops.CommonOps;
-import org.ejml.ops.NormOps;
-import solverImplementation.BFGS;
-import solverImplementation.LineSearch;
-import solverImplementation.NewtonStep;
-import solverImplementation.TrussRegionDoubleDogleg;
+import optimization.functionImplementation.Results;
+import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.CommonOps_DDRM;
+import descentAlgorithms.LineSearch;
+import descentAlgorithms.NewtonStep;
+import descentAlgorithms.StepAlgorithm;
+import descentAlgorithms.TrussRegionDoubleDogleg;
+import finiteDifferenceApproximations.FiniteDifference;
+import optimization.functionImplementation.ObjectiveFunctionNonLinear;
 
 /**
  *
@@ -22,14 +23,15 @@ import solverImplementation.TrussRegionDoubleDogleg;
 public class NonlinearEquationSolver implements Solver {
 
     private final Options solverOptions;
-    private final ObjectiveFunction equations;
+    private final ObjectiveFunctionNonLinear equations;
+    private final Results results;
     //number of consecutive past steps with length maxStep
     private int consecmax;
-    private DenseMatrix64F x;
+    private DMatrixRMaj x;
     //f(x)
-    private DenseMatrix64F fx;
+    private DMatrixRMaj fx;
     //J(x)
-    private DenseMatrix64F jacobian;
+    private DMatrixRMaj jacobian;
     //termination status
     public static final int SOLVER_RUNNING = 0;
     public static final int CONVERGED__FUNCTION_TOLERANCE = 1;
@@ -40,87 +42,85 @@ public class NonlinearEquationSolver implements Solver {
     public static final int FAILED__ANOTHER_LOCAL_MINIMUM = 6;
     private int terminationStatus;
 
-    public NonlinearEquationSolver(ObjectiveFunction equations, Options solverOptions) {
+    public NonlinearEquationSolver(ObjectiveFunctionNonLinear equations, Options solverOptions) {
         //deep copy the options
         this.solverOptions = solverOptions;
         this.equations = equations;
-        consecmax = 0;
+        this.consecmax = 0;
+        this.results = new Results();
     }
 
-    private DenseMatrix64F getJacobian(DenseMatrix64F x) {
-        //check if analytical jacobian
-        if (solverOptions.isAnalyticalHessian()) {
-            return equations.getH(x);
-        } else {
-            //finite difference Jacobian
-            DenseMatrix64F finiteDifferenceJacobian = new DenseMatrix64F(solverOptions.getN(), solverOptions.getN());
-            DenseMatrix64F fxx = equations.getF(x);
-            DenseMatrix64F dummyFx;
-            double sqrDelta = Math.sqrt(solverOptions.getMachineEpsilon());
-            for (int j = 0; j < solverOptions.getN(); j++) {
-                //calculate column j of J
-                //get the sign of x
-                double sign = Math.signum(x.get(j));
-                if (sign == 0.0) {
-                    sign = 1.0;
-                }
-                //calculate the step size
-                double stepSize = sqrDelta * Math.max(Math.abs(x.get(j)), Math.abs(1 / solverOptions.getTypicalX().get(j))) * sign;
-                //save the initial value
-                double temp = x.get(j);
-                //calculate x+stepSize
-                x.set(j, x.get(j) + stepSize);
-                //to reduce finite difference precision errors
-                stepSize = x.get(j) - temp;
-                //get the value at x+stepsize
-                dummyFx = equations.getF(x);
-                for (int i = 0; i < solverOptions.getN(); i++) {
-                    finiteDifferenceJacobian.set(i, j, (dummyFx.get(i) - fxx.get(i)) / stepSize);
-                }
-                //resetQuick the value
-                x.set(j, temp);
-            }
-            return finiteDifferenceJacobian;
-        }
-    }
-
-    private boolean checkInitialGuess(DenseMatrix64F initialGuess) {
+    /**
+     * Check the nonlinear equations at the initial point return true if the
+     * maximum error is within the function tolerance
+     *
+     * @param initialGuess initial guess supplied by the user
+     * @return true if function is zero at the initial guess
+     */
+    private boolean checkInitialGuess(DMatrixRMaj initialGuess) {
         double maximumValue = Double.MIN_VALUE;
-        DenseMatrix64F functionValues = this.equations.getF(initialGuess);
+        DMatrixRMaj functionValues = this.equations.getF(initialGuess);
         //calculate the devation of function at initial guess from 0
         for (int i = 0; i < solverOptions.getN(); i++) {
-            maximumValue = Math.max(maximumValue, Math.abs(functionValues.get(i) * solverOptions.getTypicalX().get(i)));
+            maximumValue = Math.max(maximumValue, Math.abs(functionValues.get(i)));
         }
         return maximumValue <= 0.01 * solverOptions.getFunctionTolerance();
     }
 
+    /**
+     * The error norm (magnitude) for a given x
+     *
+     * @param x function variables where norm is calculated
+     * @return the magnitude of the error
+     */
     @Override
-    public double functionNorm(DenseMatrix64F x) {
-        DenseMatrix64F fxDummy = equations.getF(x);
+    public double functionNorm(DMatrixRMaj x) {
+        if (this.solverOptions.isSaveIterationDetails()) {
+            this.results.updateFunctionEvaluations();
+        }
+        DMatrixRMaj fxDummy = equations.getF(x);
         double functionValue = 0;
         for (int i = 0; i < fxDummy.numRows; i++) {
-            functionValue += Math.pow(solverOptions.getTypicalF().get(i, 0) * fxDummy.get(i, 0), 2);
+            functionValue += Math.pow(fxDummy.get(i, 0), 2);
         }
         return 0.5 * functionValue;
     }
 
-    private double norm(DenseMatrix64F f) {
-        return NormOps.fastNormP2(f);
-    }
-
-    private void checkConvergence(int iteration, DenseMatrix64F x, DenseMatrix64F xPlus, DenseMatrix64F fx, DenseMatrix64F g, boolean solverStatus, boolean maxStepTaken) {
+    /**
+     * Check the convergence of the current iteration Decide if the solver
+     * fails, stalls or succeeds
+     *
+     * @param iteration current iteration number
+     * @param x previous x
+     * @param xPlus current x
+     * @param fx`function values at the current x
+     * @param g current function gradient
+     * @param solverStatus status of the solver (linear search or truss-region)
+     * @param maxStepTaken if last step was equal in magnitude to largest
+     * allowed
+     */
+    private void checkConvergence(int iteration, DMatrixRMaj x, DMatrixRMaj xPlus, DMatrixRMaj fx, DMatrixRMaj g, boolean solverStatus, boolean maxStepTaken) {
+        /*
+        calculate the maximum component of the scaled function
+         */
         double functionTolerance = Double.MIN_VALUE;
         for (int i = 0; i < fx.numRows; i++) {
-            functionTolerance = Math.max(functionTolerance, solverOptions.getTypicalF().get(i) * Math.abs(fx.get(i)));
+            functionTolerance = Math.max(functionTolerance,  Math.abs(fx.get(i, 0)));
         }
+        /*
+        maximum value of the scaled step
+         */
         double lastStepMagnitude = Double.MIN_VALUE;
         for (int i = 0; i < x.numRows; i++) {
-            lastStepMagnitude = Math.max(lastStepMagnitude, Math.abs(xPlus.get(i) - x.get(i)) / Math.max(Math.abs(xPlus.get(i)), 1 / solverOptions.getTypicalX().get(i)));
+            lastStepMagnitude = Math.max(lastStepMagnitude, Math.abs(xPlus.get(i, 0) - x.get(i, 0)) /  Math.max(Math.abs(xPlus.get(i)),1.0));
         }
+        /*
+        check if stuck in a local minimum
+         */
         double localMinimum = Double.MIN_VALUE;
         double functionNorm = this.functionNorm(fx);
         for (int i = 0; i < g.numRows; i++) {
-            localMinimum = Math.max(localMinimum, Math.abs(g.get(i)) * Math.max(Math.abs(xPlus.get(i)), 1 / solverOptions.getTypicalX().get(i)) / (Math.max(functionNorm, solverOptions.getN() / 2)));
+            localMinimum = Math.max(localMinimum, Math.abs(g.get(i, 0)) * Math.abs(xPlus.get(i, 0)) / (Math.max(functionNorm, solverOptions.getN() / 2)));
         }
 
         if (!solverStatus) {
@@ -138,29 +138,36 @@ public class NonlinearEquationSolver implements Solver {
             }
         } else {
             consecmax = 0;
-            if (localMinimum <= solverOptions.getMinTolerance()) {
+            /*if (localMinimum <= solverOptions.getMinTolerance()) {
                 terminationStatus = FAILED__ANOTHER_LOCAL_MINIMUM;
-            }
+            }*/
         }
     }
 
-    public void solve(DenseMatrix64F initialGuess) {
+    /**
+     * Run the solver with the options specified with the given options
+     *
+     * @param initialGuess initial guess for the solver
+     */
+    public void solve(DMatrixRMaj initialGuess) {
+        StepAlgorithm descentAlgorithm;
+        NewtonStep newtonStep = new NewtonStep();
         /* check initial guess */
-        if (checkInitialGuess(new DenseMatrix64F(initialGuess))) {
-            //
+        if (checkInitialGuess(new DMatrixRMaj(initialGuess))) {
+            x = initialGuess;
+            terminationStatus = NonlinearEquationSolver.CONVERGED__FUNCTION_TOLERANCE;
+            return;
         } else {
             /* initiliaze solvers */
-            if (solverOptions.getAlgorithm() == Options.DOGLEG_TRUST_REGION) {
-                TrussRegionDoubleDogleg.setDelta(solverOptions.getTrussRegionRadius());
-            }
-            if (solverOptions.isBFGSHessian()) {
-                BFGS.h = new DenseMatrix64F(solverOptions.getN(), solverOptions.getN());
-                BFGS.l = new DenseMatrix64F(solverOptions.getN(), solverOptions.getN());
-                for (int i = 0; i < solverOptions.getN(); i++) {
-                    BFGS.l.set(i, i, 1.0);
-                    BFGS.h.set(i, i, 1.0);
-                }
-                NewtonStep.restart=true;
+            switch (solverOptions.getAlgorithm()) {
+                case Options.LINE_SEARCH:
+                    descentAlgorithm = new LineSearch();
+                    break;
+                case Options.DOGLEG_TRUST_REGION:
+                    descentAlgorithm = new TrussRegionDoubleDogleg();
+                    break;
+                default:
+                    descentAlgorithm = new LineSearch();
             }
         }
         /*initialize iteration*/
@@ -171,85 +178,64 @@ public class NonlinearEquationSolver implements Solver {
         //f(x)
         fx = equations.getF(x);
         //J(x)
-        jacobian = getJacobian(x);
+        jacobian = FiniteDifference.getJacobian(x, equations, solverOptions);
         //g(x)=J^T*F(x)
-        DenseMatrix64F g = new DenseMatrix64F(solverOptions.getN(), 1);
-        CommonOps.multTransA(jacobian, fx, g);
-        CommonOps.elementMult(g, solverOptions.getTypicalF());
+        DMatrixRMaj g = new DMatrixRMaj(solverOptions.getN(), 1);
+        CommonOps_DDRM.multTransA(jacobian, fx, g);
         /*iterate until solver succeeds, fails or maximum iteration number is reached*/
+        DMatrixRMaj step;
+        DMatrixRMaj lowerTriangle;
         while (terminationStatus == SOLVER_RUNNING) {
-            iteration += 1;
-            DenseMatrix64F step;
-            DenseMatrix64F lowerTriangle;
-            if (!solverOptions.isBFGSHessian()) {
-                //get the newton step
-                step = NewtonStep.newtonStep(jacobian, fx, g, solverOptions);
-                lowerTriangle = NewtonStep.getLowerTriangleR();
-            } else {
-                step = NewtonStep.newtonStepBFGS(jacobian, fx, g, solverOptions);
-                lowerTriangle = BFGS.l;
-            }
+            iteration++;
+            step = newtonStep.newtonStep(jacobian, fx, g, solverOptions);
+            lowerTriangle = newtonStep.getLowerTriangleR();
             //get new x values
-            DenseMatrix64F xPlus;
-            switch (solverOptions.getAlgorithm()) {
-                case Options.LINE_SEARCH:
-                    xPlus = LineSearch.lineSearch(g, step, x, solverOptions, this);
-                    break;
-                case Options.DOGLEG_TRUST_REGION:
-                    xPlus = TrussRegionDoubleDogleg.dogDriver(g, step, x, lowerTriangle, solverOptions, this);
-                    break;
-                default:
-                    xPlus = LineSearch.lineSearch(g, step, x, solverOptions, this);
-            }
+            DMatrixRMaj xPlus = descentAlgorithm.solve(g, step, x, lowerTriangle, solverOptions, this);
             //new function values
-            DenseMatrix64F fxPlus = equations.getF(xPlus);
-            DenseMatrix64F gPlus = new DenseMatrix64F(g.numRows, 1);
-            if (!solverOptions.isBFGSHessian()) {
-                //get new jacobian
-                jacobian = getJacobian(xPlus);
-                //get new gradient g(x)=J^T*F(x)
-                CommonOps.multTransA(jacobian, fx, gPlus);
-                CommonOps.elementMult(gPlus, solverOptions.getTypicalF());
-            } else {
-                //update BFGS jacobian
-                BFGS.updateJacobianNonlinear(x, xPlus, fx, fxPlus, solverOptions);
-                /* g = J*Df*FPlus */
-                for(int i=0;i<x.numRows;i++){
-                    gPlus.set(i,0,0.0);
-                    for(int j=0;j<x.numRows;j++){
-                        gPlus.set(i,0,gPlus.get(i,0)+BFGS.h.get(i, j)*fxPlus.get(j,0)*solverOptions.getTypicalF().get(j,0) );
-                    }
-                }
-                /* g = L*g */
-                for(int i=x.numRows-1;i>=0;i--){
-                    double temp=0.0;
-                    for(int j=0;j<=i;j++){
-                        temp += BFGS.l.get(j,i)*gPlus.get(j,0);
-                    }
-                    gPlus.set(i,0,temp);
-                }
-            }
+            DMatrixRMaj fxPlus = equations.getF(xPlus);
+            DMatrixRMaj gPlus = new DMatrixRMaj(g.numRows, 1);
+            //get new jacobian
+            jacobian = FiniteDifference.getJacobian(xPlus, equations, solverOptions);
+            //get new gradient g(x)=J^T*F(x)
+            CommonOps_DDRM.multTransA(jacobian, fxPlus, gPlus);
             //check for convergence
-            checkConvergence(iteration, x, xPlus, fx, gPlus, LineSearch.getSolverStatus(), LineSearch.isMaxStepTaken());
+            checkConvergence(iteration, x, xPlus, fxPlus, gPlus, descentAlgorithm.isSolverFailed(), descentAlgorithm.isMaxStepTaken());
             //update x and g
             x = xPlus;
             g = gPlus;
             fx = fxPlus;
+            //update results
+            if (this.solverOptions.isSaveIterationDetails()) {
+                this.results.update(this.functionNorm(x), g.data, x.data, this.solverOptions.getTrussRegionRadius());
+            }
+            //System.out.println(iteration);
+            //System.out.println(x);
+            //System.out.println(fx);
         }
-        //System.out.println(x);
-        System.out.println(terminationStatus);
+        /* update if solver is successful or not */
+        if (this.solverOptions.isSaveIterationDetails()) {
+            this.results.setSuccessful(this.terminationStatus < NonlinearEquationSolver.FAILED__ANOTHER_LOCAL_MINIMUM);
+        }
     }
 
-    public DenseMatrix64F getX() {
+    public DMatrixRMaj getX() {
         return x;
     }
 
-    public DenseMatrix64F getFx() {
+    public DMatrixRMaj getFx() {
         return fx;
     }
 
-    public DenseMatrix64F getJacobian() {
+    public DMatrixRMaj getJacobian() {
         return jacobian;
+    }
+
+    public int getTerminationStatus() {
+        return terminationStatus;
+    }
+
+    public Results getResults() {
+        return results;
     }
 
 }

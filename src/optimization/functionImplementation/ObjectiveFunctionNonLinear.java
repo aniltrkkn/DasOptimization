@@ -3,14 +3,18 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package solvers;
+package optimization.functionImplementation;
 
 import org.ejml.data.DMatrixRMaj;
 
+
+
 /**
  *
- * @author O. Anil Turkkan <turkkan.1@osu.edu> - anilturkkan.com
+ * @author anill
  */
-public interface Solver {
-     public double functionNorm(DMatrixRMaj x);
+public interface ObjectiveFunctionNonLinear {
+    /*objective function*/
+    public DMatrixRMaj getF(DMatrixRMaj x);
+    public DMatrixRMaj getJ(DMatrixRMaj x);
 }

@@ -6,12 +6,13 @@
 package optimization;
 
 import optimization.functionImplementation.Options;
-import optimization.functionImplementation.ObjectiveFunction;
 import static java.lang.Math.abs;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
+import org.ejml.data.DMatrixRMaj;
+import optimization.functionImplementation.ObjectiveFunctionNonLinear;
 
 /**
  *
@@ -49,7 +50,7 @@ public class DoglegTrustSolver {
     
     private double minTol;
     private double stepTol;
-    private ObjectiveFunction function;
+    private ObjectiveFunctionNonLinear function;
     
     private double[] sx;
     private double[] sf;
@@ -77,7 +78,7 @@ public class DoglegTrustSolver {
      * @param options options class
      * @param initialGuess initial guess
      */
-    public DoglegTrustSolver(ObjectiveFunction function, Options options, double[] initialGuess) {
+    public DoglegTrustSolver(ObjectiveFunctionNonLinear function, Options options, double[] initialGuess) {
         this.function = function;
         this.options=options;
         this.n = initialGuess.length;
@@ -104,7 +105,11 @@ public class DoglegTrustSolver {
      * set the machine epsilon
      */
     private void setMechineEpsilon() {
-         
+          mechineEpsilon = 1.0;
+        while ((mechineEpsilon / 2.0 + 1.0) != 1.0) {
+            mechineEpsilon /= 2.0;
+        }
+        mechineEpsilon = mechineEpsilon * 2.0;
     }
 
     private int validateInput() {
@@ -112,28 +117,17 @@ public class DoglegTrustSolver {
         if (delta == 0.0) {
             delta = -1.0;
         }
-       /* //typical x
+        //typical x
         sx = new double[n];
-        if (options.isUseTypicalX()) {
-            for (int i = 0; i < n; i++) {
-                sx[i] = 1.0 / options.typicalX[i];
-            }
-        } else {
-            for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++) {
                 sx[i] = 1.0;
             }
-        }
+
         //typical f
         sf = new double[n];
-        if (options.useTypicalF) {
-            for (int i = 0; i < n; i++) {
-                sf[i] = 1.0 / typicalF[i];
-            }
-        } else {
-            for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++) {
                 sf[i] = 1.0;
             }
-        }*/
         //function tolerance
         functionTolerance = pow(mechineEpsilon, 2.0 / 3.0);
         //step tolerance
@@ -163,7 +157,11 @@ public class DoglegTrustSolver {
 
     private double[] fillFx(double[] x) {
         //find the function values
-        return new double[n];
+        DMatrixRMaj xx= new DMatrixRMaj(n,1);
+        for(int i=0;i<n;i++){
+            xx.set(i,0,x[i]);
+        }
+        return function.getF(xx).getData();
     }
 
     private double sumOfSquares() {
@@ -183,7 +181,8 @@ public class DoglegTrustSolver {
         for (int i = 0; i < n; i++) {
             dummy = max(dummy,abs(sf[i] * fvP[i]));
         }
-        return dummy <= 0.01 * functionTolerance;
+        return false;
+        //return dummy <= 0.01 * functionTolerance;
     }
 
     private void jacobian(double [] x,double[] f) {
