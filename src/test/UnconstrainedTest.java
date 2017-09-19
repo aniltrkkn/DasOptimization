@@ -22,10 +22,9 @@ import optimization.functionImplementation.Options;
 import org.ejml.data.DMatrixRMaj;
 import solvers.UnconstrainedOptimizer;
 
-
 public class UnconstrainedTest {
 
-    public static void bealeFunction(int algorithm, boolean analyticalGradient, boolean analyticalHessian, double initialMultiplier) {
+    public static void bealeFunction(int algorithm, boolean analyticalGradient, boolean analyticalHessian) {
         //https://www.sfu.ca/~ssurjano/beale.html
         ObjectiveFunctionUnconstrained function = new ObjectiveFunctionUnconstrained() {
             @Override
@@ -59,14 +58,16 @@ public class UnconstrainedTest {
         };
         /* set up initial guess */
         DMatrixRMaj initialGuess = new DMatrixRMaj(2, 1);
-        initialGuess.set(0, 0, -4.5 * initialMultiplier);
-        initialGuess.set(1, 0, -4.5 * initialMultiplier);
+        initialGuess.set(0, 0, -4.5);
+        initialGuess.set(1, 0, -4.5);
         Options options = new Options(2);
         /* options */
         options.setAlgorithm(algorithm);
         options.setAnalyticalGradient(analyticalGradient);
         options.setAnalyticalHessian(analyticalHessian);
+        options.setMaxIterations(1000);
         options.setSaveIterationDetails(true);
+        options.setAllTolerances(1e-12);
         /* start optimizer */
         UnconstrainedOptimizer solver = new UnconstrainedOptimizer(function, options);
         solver.solve(new DMatrixRMaj(initialGuess));
@@ -75,7 +76,7 @@ public class UnconstrainedTest {
         System.out.println("x: " + solver.getX());
     }
 
-    public static void helicalValleyFunction(int algorithm, boolean analyticalGradient, boolean analyticalHessian, double initialMultiplier) {
+    public static void helicalValleyFunction(int algorithm, boolean analyticalGradient, boolean analyticalHessian) {
         ObjectiveFunctionUnconstrained function = new ObjectiveFunctionUnconstrained() {
             @Override
             public double getF(DMatrixRMaj x) {
@@ -103,15 +104,16 @@ public class UnconstrainedTest {
         };
         /* set up initial guess */
         DMatrixRMaj initialGuess = new DMatrixRMaj(3, 1);
-        initialGuess.set(0, 0, -1.0 * initialMultiplier);
-        initialGuess.set(1, 0, 0 * initialMultiplier);
-        initialGuess.set(2, 0, 0 * initialMultiplier);
+        initialGuess.set(0, 0, -1.0);
+        initialGuess.set(1, 0, 0);
+        initialGuess.set(2, 0, 0);
         Options options = new Options(3);
         /* options */
         options.setAlgorithm(algorithm);
         options.setAnalyticalGradient(false);
         options.setAnalyticalHessian(false);
         options.setSaveIterationDetails(true);
+        options.setAllTolerances(1e-12);
         /* start optimizer */
         UnconstrainedOptimizer solver = new UnconstrainedOptimizer(function, options);
         solver.solve(new DMatrixRMaj(initialGuess));
@@ -120,7 +122,7 @@ public class UnconstrainedTest {
         System.out.println("x: " + solver.getX());
     }
 
-    public static void woodFunction(int algorithm, boolean analyticalGradient, boolean analyticalHessian, double initialMultiplier) {
+    public static void woodFunction(int algorithm, boolean analyticalGradient, boolean analyticalHessian) {
         ObjectiveFunctionUnconstrained function = new ObjectiveFunctionUnconstrained() {
             @Override
             public double getF(DMatrixRMaj x) {
@@ -166,27 +168,28 @@ public class UnconstrainedTest {
                 return h;
             }
         };
+        /* set up initial guess */
         DMatrixRMaj initialGuess = new DMatrixRMaj(4, 1);
-        initialGuess.set(0, 0, -3.0 * initialMultiplier);
-        initialGuess.set(1, 0, -1.0 * initialMultiplier);
-        initialGuess.set(2, 0, -3.0 * initialMultiplier);
-        initialGuess.set(3, 0, -1.0 * initialMultiplier);
+        initialGuess.set(0, 0, -3.0);
+        initialGuess.set(1, 0, -1.0);
+        initialGuess.set(2, 0, -3.0);
+        initialGuess.set(3, 0, -1.0);
+        /* options */
         Options options = new Options(4);
         options.setAnalyticalGradient(analyticalGradient);
         options.setAnalyticalHessian(analyticalHessian);
         options.setAlgorithm(algorithm);
         options.setSaveIterationDetails(true);
+        options.setAllTolerances(1e-12);
         UnconstrainedOptimizer solver = new UnconstrainedOptimizer(function, options);
-        for (int i = 0; i < 1; i++) {
-            solver.solve(new DMatrixRMaj(initialGuess));
-        }
+        /* start optimizer */
         solver.solve(new DMatrixRMaj(initialGuess));
         System.out.println(solver.getResults());
         System.out.println("F: " + solver.getFx());
         System.out.println("x: " + solver.getX());
     }
 
-    public static void rosenbrockFunction(int algorithm, boolean analyticalGradient, boolean analyticalHessian, double initialMultiplier) {
+    public static void rosenbrockFunction(int algorithm, boolean analyticalGradient, boolean analyticalHessian) {
         ObjectiveFunctionUnconstrained function = new ObjectiveFunctionUnconstrained() {
             @Override
             public double getF(DMatrixRMaj x) {
@@ -204,10 +207,10 @@ public class UnconstrainedTest {
                 double x3 = x.get(2);
                 double x4 = x.get(3);
                 DMatrixRMaj g = new DMatrixRMaj(4, 1);
-                g.set(0, 0, 2.0*x1 - 2.0*x1*(- 100.0*x1*x1 + 100*x2) - 200*x1*(- x1*x1 + x2) - 2);
-                g.set(1, 0,- 200*x1*x1 + 202*x2 - 2*x2*(100*x3 - 100*x2*x2) - 200*x2*(x3 - x2*x2) - 2);
-                g.set(2, 0, - 200*x2*x2 + 202*x3 - 2*x3*(100*x4 - 100*x3*x3) - 200*x3*(x4 - x3*x3) - 2);
-                g.set(3, 0, - 200*x3*x3 + 200*x4);
+                g.set(0, 0, 2.0 * x1 - 2.0 * x1 * (-100.0 * x1 * x1 + 100 * x2) - 200 * x1 * (-x1 * x1 + x2) - 2);
+                g.set(1, 0, - 200 * x1 * x1 + 202 * x2 - 2 * x2 * (100 * x3 - 100 * x2 * x2) - 200 * x2 * (x3 - x2 * x2) - 2);
+                g.set(2, 0, - 200 * x2 * x2 + 202 * x3 - 2 * x3 * (100 * x4 - 100 * x3 * x3) - 200 * x3 * (x4 - x3 * x3) - 2);
+                g.set(3, 0, - 200 * x3 * x3 + 200 * x4);
                 return g;
             }
 
@@ -218,25 +221,25 @@ public class UnconstrainedTest {
                 double x3 = x.get(2);
                 double x4 = x.get(3);
                 DMatrixRMaj h = new DMatrixRMaj(4, 4);
-                h.set(0, 0, 1200*x1*x1 - 400*x2 + 2);
+                h.set(0, 0, 1200 * x1 * x1 - 400 * x2 + 2);
                 h.set(0, 1, -400 * x1);
                 h.set(1, 0, -400 * x1);
-                h.set(1, 1, 1200.0*x2*x2-400*x3+202);
-                h.set(1, 3, -400*x2);
-                h.set(2, 1,  -400*x2);
-                h.set(2, 2, 1200*x3*x3 - 400*x4 + 202);
-                h.set(2, 3, -400*x3);
-                h.set(3, 2, -400*x3);
+                h.set(1, 1, 1200.0 * x2 * x2 - 400 * x3 + 202);
+                h.set(1, 3, -400 * x2);
+                h.set(2, 1, -400 * x2);
+                h.set(2, 2, 1200 * x3 * x3 - 400 * x4 + 202);
+                h.set(2, 3, -400 * x3);
+                h.set(3, 2, -400 * x3);
                 h.set(3, 3, 200);
                 return h;
             }
         };
         /* set up initial guess */
         DMatrixRMaj initialGuess = new DMatrixRMaj(4, 1);
-        initialGuess.set(0, 0, -2.0 * initialMultiplier);
-        initialGuess.set(1, 0, 2.0 * initialMultiplier);
-        initialGuess.set(2, 0, -2.0 * initialMultiplier);
-        initialGuess.set(3, 0, 2.0 * initialMultiplier);
+        initialGuess.set(0, 0, -2.0);
+        initialGuess.set(1, 0, 2.0);
+        initialGuess.set(2, 0, -2.0);
+        initialGuess.set(3, 0, 2.0);
         Options options = new Options(4);
         /* options */
         options.setAllTolerances(1e-12);
@@ -252,8 +255,8 @@ public class UnconstrainedTest {
         System.out.println("F: " + solver.getFx());
         System.out.println("x: " + solver.getX());
     }
-    
-     public static void powellSingularFunction(int algorithm, boolean analyticalGradient, boolean analyticalHessian, double initialMultiplier) {
+
+    public static void powellSingularFunction(int algorithm, boolean analyticalGradient, boolean analyticalHessian) {
         ObjectiveFunctionUnconstrained function = new ObjectiveFunctionUnconstrained() {
             @Override
             public double getF(DMatrixRMaj x) {
@@ -261,7 +264,7 @@ public class UnconstrainedTest {
                 double x2 = x.get(1);
                 double x3 = x.get(2);
                 double x4 = x.get(3);
-                return Math.pow((x1+10*x2),2)+5*Math.pow((x3-x4),2)+Math.pow((x2-2*x3),4)+10*Math.pow((x1-x4),4);
+                return Math.pow((x1 + 10 * x2), 2) + 5 * Math.pow((x3 - x4), 2) + Math.pow((x2 - 2 * x3), 4) + 10 * Math.pow((x1 - x4), 4);
             }
 
             @Override
@@ -271,10 +274,10 @@ public class UnconstrainedTest {
                 double x3 = x.get(2);
                 double x4 = x.get(3);
                 DMatrixRMaj g = new DMatrixRMaj(4, 1);
-                g.set(0, 0, 2*x1 + 20*x2 + 40*Math.pow((x1 - x4),3));
-                g.set(1, 0,20*x1 + 200*x2 + 4*Math.pow((x2 - 2*x3),3));
-                g.set(2, 0, 10*x3 - 10*x4 - 8*Math.pow((x2 - 2*x3),3));
-                g.set(3, 0,  10*x4 - 10*x3 - 40*Math.pow((x1 - x4),3));
+                g.set(0, 0, 2 * x1 + 20 * x2 + 40 * Math.pow((x1 - x4), 3));
+                g.set(1, 0, 20 * x1 + 200 * x2 + 4 * Math.pow((x2 - 2 * x3), 3));
+                g.set(2, 0, 10 * x3 - 10 * x4 - 8 * Math.pow((x2 - 2 * x3), 3));
+                g.set(3, 0, 10 * x4 - 10 * x3 - 40 * Math.pow((x1 - x4), 3));
                 return g;
             }
 
@@ -285,25 +288,25 @@ public class UnconstrainedTest {
                 double x3 = x.get(2);
                 double x4 = x.get(3);
                 DMatrixRMaj h = new DMatrixRMaj(4, 4);
-                h.set(0, 0, 120*(x1 - x4)*(x1 - x4) + 2);
+                h.set(0, 0, 120 * (x1 - x4) * (x1 - x4) + 2);
                 h.set(0, 1, 20);
-                h.set(0, 3, -120*(x1 - x4)*(x1 - x4));
-                h.set(1, 0 ,20);
-                h.set(1, 1, 12*(x2 - 2*x3)*(x2 - 2*x3) + 200);
-                h.set(1, 2,   -24*(x2 - 2*x3)*(x2 - 2*x3));
-                h.set(2, 1, -24*(x2 - 2*x3)*(x2 - 2*x3));
-                h.set(2, 2, 48*(x2 - 2*x3)*(x2 - 2*x3) + 10);
+                h.set(0, 3, -120 * (x1 - x4) * (x1 - x4));
+                h.set(1, 0, 20);
+                h.set(1, 1, 12 * (x2 - 2 * x3) * (x2 - 2 * x3) + 200);
+                h.set(1, 2, -24 * (x2 - 2 * x3) * (x2 - 2 * x3));
+                h.set(2, 1, -24 * (x2 - 2 * x3) * (x2 - 2 * x3));
+                h.set(2, 2, 48 * (x2 - 2 * x3) * (x2 - 2 * x3) + 10);
                 h.set(2, 3, -10);
-                h.set(3, 0,  -120*(x1 - x4)*(x1 - x4));
-                h.set(3, 2,  -10);
-                h.set(3, 3,  120*(x1 - x4)*(x1 - x4) + 10);
+                h.set(3, 0, -120 * (x1 - x4) * (x1 - x4));
+                h.set(3, 2, -10);
+                h.set(3, 3, 120 * (x1 - x4) * (x1 - x4) + 10);
                 return h;
             }
         };
         /* set up initial guess */
         DMatrixRMaj initialGuess = new DMatrixRMaj(4, 1);
         initialGuess.set(0, 0, 3.0);
-        initialGuess.set(1, 0,-1.0);
+        initialGuess.set(1, 0, -1.0);
         initialGuess.set(2, 0, 0.0);
         initialGuess.set(3, 0, 1.0);
         Options options = new Options(4);
@@ -320,7 +323,5 @@ public class UnconstrainedTest {
         System.out.println("F: " + solver.getFx());
         System.out.println("x: " + solver.getX());
     }
-
-
 
 }

@@ -25,14 +25,13 @@ import optimization.functionImplementation.ObjectiveFunctionNonLinear;
 
 public class NonlinearTest {
 
-    public static void testExtendedRosenbrockFunction(int n, int solver, double initialGuessMultiplier) {
-        System.out.println("**********************************************");
-        System.out.println("Number of Variables=" + Integer.toString(n));
+    public static void extendedRosenbrockFunction(int numberOfVariables, int solver, boolean analyticalJacobian) {
+        //input class
         ObjectiveFunctionNonLinear f = new ObjectiveFunctionNonLinear() {
             @Override
             public DMatrixRMaj getF(DMatrixRMaj x) {
-                DMatrixRMaj f = new DMatrixRMaj(n, 1);
-                for (int i = 0; i < n / 2; i++) {
+                DMatrixRMaj f = new DMatrixRMaj(numberOfVariables, 1);
+                for (int i = 0; i < numberOfVariables / 2; i++) {
                     f.set(2 * i, 0, 10 * (x.get(2 * i + 1, 0) - x.get(2 * i, 0) * x.get(2 * i, 0)));
                     f.set(2 * i + 1, 0, 1 - x.get(2 * i, 0));
                 }
@@ -41,8 +40,8 @@ public class NonlinearTest {
 
             @Override
             public DMatrixRMaj getJ(DMatrixRMaj x) {
-                DMatrixRMaj H = new DMatrixRMaj(n, n);
-                for (int i = 0; i < n / 2; i++) {
+                DMatrixRMaj H = new DMatrixRMaj(numberOfVariables, numberOfVariables);
+                for (int i = 0; i < numberOfVariables / 2; i++) {
                     H.set(2 * i, 2 * i, -20 * x.get(2 * i));
                     H.set(2 * i, 2 * i + 1, 10);
                     H.set(2 * i + 1, 2 * i, -1);
@@ -52,34 +51,34 @@ public class NonlinearTest {
             }
 
         };
-        DMatrixRMaj initialGuess = new DMatrixRMaj(n, 1);
-        for (int i = 0; i < n / 2; i++) {
-            initialGuess.set(2 * i, -1.2 * initialGuessMultiplier);
-            initialGuess.set(2 * i + 1, 1.0 * initialGuessMultiplier);
+        //initial guess
+        DMatrixRMaj initialGuess = new DMatrixRMaj(numberOfVariables, 1);
+        for (int i = 0; i < numberOfVariables/ 2; i++) {
+            initialGuess.set(2 * i, -1.2 );
+            initialGuess.set(2 * i + 1, 1.0);
         }
-        Options options = new Options(n);
-        options.setAnalyticalHessian(false);
+        //options
+        Options options = new Options(numberOfVariables);
+        options.setAnalyticalJacobian(analyticalJacobian);
         options.setAlgorithm(solver);
+        options.setSaveIterationDetails(true);
+        options.setAllTolerances(1e-12);
         NonlinearEquationSolver nonlinearSolver = new NonlinearEquationSolver(f, options);
-        long startTime = System.nanoTime();
-        for (int i = 0; i < 1; i++) {
-            nonlinearSolver.solve(new DMatrixRMaj(initialGuess));
-        }
-        long endTime = System.nanoTime();
-        System.out.println(nonlinearSolver.getX());
-        //System.out.println(solver.getFx());
-        //System.out.println(solver.getJacobian());
-        System.out.println((endTime - startTime) / 1e9);
+        //solve and print output
+        nonlinearSolver.solve(new DMatrixRMaj(initialGuess));
+        System.out.println(nonlinearSolver.getResults());
+        System.out.println("F: " + nonlinearSolver.getFx());
+        System.out.println("x: " + nonlinearSolver.getX());
+
     }
 
-    public static void testPowellSingularFunction(int n, int solver, double initialGuessMultiplier) {
-        System.out.println("**********************************************");
-        System.out.println("Number of Variables=" + Integer.toString(n));
+    public static void powellSingularFunction(int numberOfVariables, int solver, boolean analyticalJacobian) {
+        //input class
         ObjectiveFunctionNonLinear f = new ObjectiveFunctionNonLinear() {
             @Override
             public DMatrixRMaj getF(DMatrixRMaj x) {
-                DMatrixRMaj f = new DMatrixRMaj(n, 1);
-                for (int i = 0; i < n / 4; i++) {
+                DMatrixRMaj f = new DMatrixRMaj(numberOfVariables, 1);
+                for (int i = 0; i < numberOfVariables/ 4; i++) {
                     f.set(4 * i, 0, x.get(4 * i, 0) + 10 * x.get(4 * i + 1, 0));
                     f.set(4 * i + 1, 0, Math.sqrt(5) * (x.get(4 * i + 2, 0) - x.get(4 * i + 3, 0)));
                     f.set(4 * i + 2, 0, Math.pow(x.get(4 * i + 1, 0) - 2 * x.get(4 * i + 2, 0), 2));
@@ -90,89 +89,77 @@ public class NonlinearTest {
 
             @Override
             public DMatrixRMaj getJ(DMatrixRMaj x) {
-                DMatrixRMaj H = new DMatrixRMaj(n, n);
-                for (int i = 0; i < n / 2; i++) {
-                    H.set(2 * i, 2 * i, -20 * x.get(2 * i));
-                    H.set(2 * i, 2 * i + 1, 10);
-                    H.set(2 * i + 1, 2 * i, -1);
-                }
-
-                return H;
+                return null;
             }
         };
-        DMatrixRMaj initialGuess = new DMatrixRMaj(n, 1);
-        for (int i = 0; i < n / 4; i++) {
-            initialGuess.set(4 * i, 3.0 * initialGuessMultiplier);
-            initialGuess.set(4 * i + 1, -1.0 * initialGuessMultiplier);
-            initialGuess.set(4 * i + 2, 0.0 * initialGuessMultiplier);
-            initialGuess.set(4 * i + 3, 1.0 * initialGuessMultiplier);
+        //initial guess
+        DMatrixRMaj initialGuess = new DMatrixRMaj(numberOfVariables, 1);
+        for (int i = 0; i < numberOfVariables / 4; i++) {
+            initialGuess.set(4 * i, 3.0 );
+            initialGuess.set(4 * i + 1, -1.0 );
+            initialGuess.set(4 * i + 2, 0.0 );
+            initialGuess.set(4 * i + 3, 1.0 );
         }
-        Options options = new Options(n);
-        options.setAnalyticalHessian(true);
-        System.out.println("Algoritm: Line Search");
+        //options
+        Options options = new Options(numberOfVariables);
+        options.setAnalyticalJacobian(false);
         options.setAlgorithm(solver);
+        options.setSaveIterationDetails(true);
+        options.setAllTolerances(1e-12);
         NonlinearEquationSolver nonlinearSolver = new NonlinearEquationSolver(f, options);
-        long startTime = System.nanoTime();
-        for (int i = 0; i < 1; i++) {
-            nonlinearSolver.solve(new DMatrixRMaj(initialGuess));
-        }
-        long endTime = System.nanoTime();
-        System.out.println(nonlinearSolver.getX());
-        //System.out.println(solver.getFx());
-        //System.out.println(solver.getJacobian());
-        System.out.println((endTime - startTime) / 1e9);
+        //solve and print output
+        nonlinearSolver.solve(new DMatrixRMaj(initialGuess));
+        System.out.println(nonlinearSolver.getResults());
+        System.out.println("F: " + nonlinearSolver.getFx());
+        System.out.println("x: " + nonlinearSolver.getX());
     }
 
-    public static void testTrigonometricFunction(int n, int solver, double initialGuessMultiplier) {
-        System.out.println("**********************************************");
-        System.out.println("Number of Variables=" + Integer.toString(n));
+    public static void trigonometricFunction(int numberOfVariables, int solver, boolean analyticalJacobian) {
+        //input class
         ObjectiveFunctionNonLinear f = new ObjectiveFunctionNonLinear() {
             @Override
             public DMatrixRMaj getF(DMatrixRMaj x) {
-                DMatrixRMaj f = new DMatrixRMaj(n, 1);
-                for (int i = 0; i < n; i++) {
+                DMatrixRMaj f = new DMatrixRMaj(numberOfVariables, 1);
+                for (int i = 0; i < numberOfVariables; i++) {
                     double temp = 0.0;
-                    for (int j = 0; j < n; j++) {
+                    for (int j = 0; j < numberOfVariables; j++) {
                         temp += Math.cos(x.get(j, 0)) + ((double) i) * (1.0 - Math.cos(x.get(i, 0))) - Math.sin(x.get(i, 0));
                     }
-                    f.set(i, 0, n - temp);
+                    f.set(i, 0, numberOfVariables - temp);
                 }
                 return f;
             }
 
             @Override
             public DMatrixRMaj getJ(DMatrixRMaj x) {
-                DMatrixRMaj H = new DMatrixRMaj(n, n);
-                return H;
+                return null;
             }
         };
-        DMatrixRMaj initialGuess = new DMatrixRMaj(n, 1);
-        for (int i = 0; i < n; i++) {
-            initialGuess.set(i, 1 / n * initialGuessMultiplier);
+        //initial guess
+        DMatrixRMaj initialGuess = new DMatrixRMaj(numberOfVariables, 1);
+        for (int i = 0; i < numberOfVariables; i++) {
+            initialGuess.set(i, 1.0/ numberOfVariables);
         }
-        Options options = new Options(n);
-        options.setAnalyticalHessian(true);
-        System.out.println("Algoritm: Line Search");
+        //options
+        Options options = new Options(numberOfVariables);
+        options.setAnalyticalJacobian(false);
         options.setAlgorithm(solver);
+        options.setSaveIterationDetails(true);
+        options.setAllTolerances(1e-12);
         NonlinearEquationSolver nonlinearSolver = new NonlinearEquationSolver(f, options);
-        long startTime = System.nanoTime();
-        for (int i = 0; i < 1; i++) {
-            nonlinearSolver.solve(new DMatrixRMaj(initialGuess));
-        }
-        long endTime = System.nanoTime();
-        System.out.println(nonlinearSolver.getX());
-        //System.out.println(solver.getFx());
-        //System.out.println(solver.getJacobian());
-        System.out.println((endTime - startTime) / 1e9);
+        //solve and print output
+        nonlinearSolver.solve(new DMatrixRMaj(initialGuess));
+        System.out.println(nonlinearSolver.getResults());
+        System.out.println("F: " + nonlinearSolver.getFx());
+        System.out.println("x: " + nonlinearSolver.getX());
     }
 
-    public static void testHelicalValleyFunction(int n, int solver, double initialGuessMultiplier) {
-        System.out.println("**********************************************");
-        System.out.println("Number of Variables=" + Integer.toString(n));
+    public static void helicalValleyFunction(int numberOfVariables, int solver, boolean analyticalJacobian) {
+        //input class
         ObjectiveFunctionNonLinear f = new ObjectiveFunctionNonLinear() {
             @Override
             public DMatrixRMaj getF(DMatrixRMaj x) {
-                DMatrixRMaj f = new DMatrixRMaj(n, 1);
+                DMatrixRMaj f = new DMatrixRMaj(numberOfVariables, 1);
                 double fValue;
                 if (x.get(0, 0) > 0.0) {
                     fValue = (1 / (2 * Math.PI)) * Math.atan(x.get(1, 0) / x.get(0, 0));
@@ -187,28 +174,26 @@ public class NonlinearTest {
 
             @Override
             public DMatrixRMaj getJ(DMatrixRMaj x) {
-                DMatrixRMaj H = new DMatrixRMaj(n, n);
-                return H;
+                return null;
             }
         };
-        DMatrixRMaj initialGuess = new DMatrixRMaj(n, 1);
-        initialGuess.set(0, 0, -1.0 * initialGuessMultiplier);
-        initialGuess.set(1, 0, 0.0 * initialGuessMultiplier);
-        initialGuess.set(2, 0, 0.0 * initialGuessMultiplier);
-        Options options = new Options(n);
-        options.setAnalyticalHessian(false);
-        System.out.println("Algoritm: Line Search");
+        //initial guess
+        DMatrixRMaj initialGuess = new DMatrixRMaj(numberOfVariables, 1);
+        initialGuess.set(0, 0, -1.0 );
+        initialGuess.set(1, 0, 0.0 );
+        initialGuess.set(2, 0, 0.0 );
+        //options
+        Options options = new Options(numberOfVariables);
+        options.setAnalyticalJacobian(false);
         options.setAlgorithm(solver);
+        options.setSaveIterationDetails(true);
+        options.setAllTolerances(1e-12);
         NonlinearEquationSolver nonlinearSolver = new NonlinearEquationSolver(f, options);
-        long startTime = System.nanoTime();
-        for (int i = 0; i < 1; i++) {
-            nonlinearSolver.solve(new DMatrixRMaj(initialGuess));
-        }
-        long endTime = System.nanoTime();
-        System.out.println(nonlinearSolver.getX());
-        //System.out.println(solver.getFx());
-        //System.out.println(solver.getJacobian());
-        System.out.println((endTime - startTime) / 1e9);
+        //solve and print output
+        nonlinearSolver.solve(new DMatrixRMaj(initialGuess));
+        System.out.println(nonlinearSolver.getResults());
+        System.out.println("F: " + nonlinearSolver.getFx());
+        System.out.println("x: " + nonlinearSolver.getX());
     }
 
     

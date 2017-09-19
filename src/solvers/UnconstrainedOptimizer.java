@@ -365,6 +365,7 @@ public class UnconstrainedOptimizer implements Solver {
         /* update if solver is successful or not */
         if (this.solverOptions.isSaveIterationDetails()) {
             this.results.setSuccessful(this.terminationStatus <= UnconstrainedOptimizer.CONVERGED__STEP_TOLERANCE);
+            this.results.setStopReason(terminationString);
         }
     }
 

@@ -51,7 +51,7 @@ public class Options {
         //make sure that n is greater than 0 
         assert n > 0;
         //default algorithm is DOGLEG_TRUST_REGION
-        algorithm = Options.LINE_SEARCH;
+        algorithm = Options.TRUST_REGION;
         //default gradients are calculated with finite difference
         analyticalGradient = false;
         centralDifferenceGradient = false;
