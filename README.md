@@ -1,14 +1,4 @@
 # DasOptimization
 
-DasOptimization is an optimization library in progress. I started coding this library due to lack of an open source pure Java 
-optimization library.
+DasOptimization is a lightweight, robust and scalable library capable of solving a system of nonlinear equations and unconstrained nonlinear optimization. Analytical gradient, the Jacobian or the Hessian can be supplied but if they are not available, they will be calculated with finite differences. DasOptimization can recover from singular Hessian and Jacobian matrices and the library employs two descent algorithms; Line Search and Trust-Region-Dogleg algorithm.
 
-DasOptimization is planned to contain following modules:
-- Nonlinear equation solver
-- Unconstrained nonlinear optimizer
-- Nonlinear optimization with equality and inequality constraints
-- Supports analytical, finite difference approximation, BFGS or L-BFGS gradient or Hessian
-
-Currently, only nonlinear equation solver is complete and the library is planned to be fully functional at late August 2017.
-
-DasOptimization uses EJML for matrix operations.
