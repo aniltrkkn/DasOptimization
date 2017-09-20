@@ -11,7 +11,7 @@ For more information, please visit the [user guide](http://compliantanalysis.com
 
 DasOptimization is created for and successfully employed in [DAS Mechanism Analysis](http://compliantanalysis.com) which is a fast kinematic analysis software for mechanisms.
 
-EJML([Efficient Java Matrix Library](http://ejml.org/wiki/index.php?title=Main_Page)) is used for matrix calculations. You need to include their .jar files in your project library before running any DasOptimization code. 
+EJML ([Efficient Java Matrix Library](http://ejml.org/wiki/index.php?title=Main_Page)) is used for matrix calculations. You need to include or build appropriate .jar files in your project library before running any DasOptimization code. 
 
 DasOptimization (V2.0) will include a nonlinear constrained optimizer capable of handling nonlinear constraints. 
 
