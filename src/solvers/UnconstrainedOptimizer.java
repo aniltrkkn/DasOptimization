@@ -397,4 +397,8 @@ public class UnconstrainedOptimizer implements Solver {
     public Options getSolverOptions() {
         return this.solverOptions;
     }
+
+    public String getTerminationString() {
+        return terminationString;
+    }
 }

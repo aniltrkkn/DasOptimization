@@ -244,4 +244,8 @@ public class NonlinearEquationSolver implements Solver {
         return this.solverOptions;
     }
 
+    public String getTerminationString() {
+        return terminationString;
+    }
+
 }

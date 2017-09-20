@@ -159,7 +159,7 @@ public class NonlinearTest {
         ObjectiveFunctionNonLinear f = new ObjectiveFunctionNonLinear() {
             @Override
             public DMatrixRMaj getF(DMatrixRMaj x) {
-                DMatrixRMaj f = new DMatrixRMaj(numberOfVariables, 1);
+                DMatrixRMaj f = new DMatrixRMaj(3, 1);
                 double fValue;
                 if (x.get(0, 0) > 0.0) {
                     fValue = (1 / (2 * Math.PI)) * Math.atan(x.get(1, 0) / x.get(0, 0));
@@ -178,12 +178,12 @@ public class NonlinearTest {
             }
         };
         //initial guess
-        DMatrixRMaj initialGuess = new DMatrixRMaj(numberOfVariables, 1);
+        DMatrixRMaj initialGuess = new DMatrixRMaj(3, 1);
         initialGuess.set(0, 0, -1.0 );
         initialGuess.set(1, 0, 0.0 );
         initialGuess.set(2, 0, 0.0 );
         //options
-        Options options = new Options(numberOfVariables);
+        Options options = new Options(3);
         options.setAnalyticalJacobian(false);
         options.setAlgorithm(solver);
         options.setSaveIterationDetails(true);
