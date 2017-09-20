@@ -106,4 +106,7 @@ public class Results {
         this.stopReason = stopReason;
     }
 
+    public int getFunctionEvaluations() {
+        return functionEvaluations;
+    }
 }
