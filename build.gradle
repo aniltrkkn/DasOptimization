@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility='16'
+    targetCompatibility='16'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+}
+
+test {
+    useJUnitPlatform()
+}
+sourceCompatibility = JavaVersion.VERSION_1_5
+targetCompatibility = JavaVersion.VERSION_1_5
