@@ -43,3 +43,4 @@ publishing {
 test {
     useJUnitPlatform()
 }
+
