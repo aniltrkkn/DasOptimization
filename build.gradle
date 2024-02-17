@@ -1,18 +1,10 @@
 plugins {
-    id 'java'
+    id 'java-library'
     id 'maven-publish'
 }
 
-group 'org.github.Tamada4a'
-version '0.1'
-
 repositories {
     mavenCentral()
-}
-
-tasks.withType(JavaCompile) {
-    sourceCompatibility='16'
-    targetCompatibility='16'
 }
 
 sourceSets {
@@ -24,8 +16,6 @@ sourceSets {
 }
 
 dependencies {
-    testImplementation "org.junit.jupiter:junit-jupiter-api:5.7.2"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.7.2"
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 }
 
@@ -44,5 +34,3 @@ publishing {
 test {
     useJUnitPlatform()
 }
-sourceCompatibility = JavaVersion.VERSION_1_5
-targetCompatibility = JavaVersion.VERSION_1_5
