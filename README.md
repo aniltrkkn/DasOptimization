@@ -1,7 +1,48 @@
 # DasOptimization
 
 ## Differences
-The difference between my version and the original is that I moved the library to Gradle so that it would be easier for people to use this library in their projects. Also here is the user guide for DasOptimization.
+The difference between my version and the original is that I moved the library to Gradle and <a href="https://jitpack.io/">jitpack.io</a> so that it would be easier for people to use this library in their projects. Also here is the user guide for DasOptimization.
+
+## Download
+
+### Gradle:
+- Add the JitPack repository to your `build.gradle` file:
+```gradle
+repositories {
+    ...
+    maven { url 'https://jitpack.io' }
+}
+```
+- Add the dependency:
+```gradle
+dependencies {
+    ...
+    implementation 'com.github.Tamada4a:DasOptimization:1.0'
+}
+```
+
+### Maven:
+- Add the JitPack repository to your `pom.xml` file:
+```xml
+<repositories>
+    ...
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+```
+- Add the dependency:
+```xml
+<dependencies>
+    ...
+    <dependency>
+        <groupId>com.github.Tamada4a</groupId>
+        <artifactId>DasOptimization</artifactId>
+         <version>1.0</version>
+    </dependency>
+</dependencies>
+```
 
 ## User Guide for DasOptimization
 ### Solving System of Nonlinear Equations
@@ -190,13 +231,14 @@ UnconstrainedTest.rosenbrockFunction(int algorithm, boolean analyticalGradient, 
 UnconstrainedTest.powellSingularFunction(int algorithm, boolean analyticalGradient, boolean analyticalHessian)
 ```
 
-## Authors
-The author of the original project can be found <a href="https://github.com/aniltrkkn/DasOptimization">here</a>.
-
 ## Code Examples
 Code example of solving system of nonlinear equations:
 1. [Main class](https://github.com/Tamada4a/DasOptimization/blob/master/src/Main.java) of this repository.
 2. [My study project on Kotlin](https://github.com/Tamada4a/SimovinARMA/blob/main/Kotlin/src/main/kotlin/Main.kt).
+
+## Authors
+- Original <a href="https://github.com/aniltrkkn/DasOptimization">repository</a>.
+- <a href="https://github.com/aniltrkkn/DasOptimization">Author</a> of original repository.
 
 ## Original README
 DasOptimization (V1.0) is a lightweight, robust and scalable library capable of solving a system of nonlinear equations and nonlinear unconstrained optimization. Some of the capabilities are:
