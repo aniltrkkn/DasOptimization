@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'org.github.Tamada4a'
-version '1.2'
+version '1.4'
 
 repositories {
     mavenCentral()
@@ -23,17 +23,26 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 }
 
-jar {
-    enabled(false)
-    dependsOn(shadowJar {classifier(null)})
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier("sources")
+    from sourceSets.main.allSource
+}
+
+shadowJar {
+    archiveName = "$baseName-$version.$extension"
+}
+
+artifacts {
+    archives sourcesJar
+    archives shadowJar
 }
 
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            groupId = 'org.github.Tamada4a'
-            artifactId = 'DasOptimization'
-            version = '1.2'
+            groupId = project.group
+            artifactId = project.name
+            version = project.version
 
             from components.java
         }
