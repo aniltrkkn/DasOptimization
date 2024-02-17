@@ -3,6 +3,9 @@ plugins {
     id 'maven-publish'
 }
 
+group 'org.github.Tamada4a'
+version '1.0'
+
 repositories {
     mavenCentral()
 }
@@ -24,7 +27,7 @@ publishing {
         mavenJava(MavenPublication) {
             groupId = 'org.github.Tamada4a'
             artifactId = 'DasOptimization'
-            version = '0.1'
+            version = '1.0'
 
             from components.java
         }
