@@ -190,6 +190,9 @@ UnconstrainedTest.rosenbrockFunction(int algorithm, boolean analyticalGradient, 
 UnconstrainedTest.powellSingularFunction(int algorithm, boolean analyticalGradient, boolean analyticalHessian)
 ```
 
+## Authors
+The author of the original project can be found <a href="https://github.com/aniltrkkn/DasOptimization">here</a>.
+
 ## Code Examples
 Code example of solving system of nonlinear equations:
 1. [Main class](https://github.com/Tamada4a/DasOptimization/blob/master/src/Main.java) of this repository.
